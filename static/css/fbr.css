@@ -1,0 +1,462 @@
+/* ==========================================================================
+   Commissioner Inland Revenue (Appeals-II), RTO Faisalabad
+   FBR-inspired theme
+   ========================================================================== */
+
+:root {
+    --fbr-green: #00693e;
+    --fbr-green-dark: #004d2e;
+    --fbr-green-darker: #003820;
+    --fbr-green-light: #e8f3ed;
+    --fbr-green-mid: #0d8b55;
+    --fbr-gold: #c8a951;
+    --fbr-gold-light: #f7f0dc;
+
+    --ink: #1f2a24;
+    --muted: #6b7770;
+    --line: #dde5e0;
+    --surface: #ffffff;
+    --canvas: #f4f7f5;
+
+    --danger: #b3261e;
+    --danger-light: #fdecea;
+    --warn: #a86b00;
+    --warn-light: #fff6e5;
+    --ok: #1b6b3a;
+    --ok-light: #e6f4ea;
+}
+
+body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* --- Top identity bar --------------------------------------------------- */
+.gov-strip {
+    background: var(--fbr-green-darker);
+    color: rgba(255, 255, 255, .85);
+    font-size: 11.5px;
+    letter-spacing: .3px;
+    padding: 5px 0;
+}
+
+.site-header {
+    background: linear-gradient(180deg, var(--fbr-green) 0%, var(--fbr-green-dark) 100%);
+    color: #fff;
+    border-bottom: 3px solid var(--fbr-gold);
+}
+
+.site-header .crest {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--fbr-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex: 0 0 auto;
+    border: 2px solid var(--fbr-gold);
+}
+
+/* The FBR mark is landscape and its lettering is dark, so it sits on a
+   white plate rather than inside the circular crest. */
+.site-header .brand-logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--fbr-gold);
+    border-radius: 6px;
+    padding: 5px 11px;
+}
+
+.site-header .brand-logo img {
+    display: block;
+    height: 42px;
+    width: auto;
+}
+
+.site-header .office-name {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.site-header .office-sub {
+    font-size: 12.5px;
+    opacity: .85;
+    margin: 0;
+}
+
+/* --- Navigation --------------------------------------------------------- */
+.main-nav {
+    background: var(--fbr-green-dark);
+    border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.main-nav .nav-link {
+    color: rgba(255, 255, 255, .88);
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 11px 16px;
+    border-bottom: 3px solid transparent;
+    transition: background .15s, border-color .15s;
+}
+
+.main-nav .nav-link:hover {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
+
+.main-nav .nav-link.active {
+    background: rgba(0, 0, 0, .18);
+    border-bottom-color: var(--fbr-gold);
+    color: #fff;
+}
+
+/* Count badge sitting inside a nav item, e.g. Users 4 */
+.main-nav .nav-count {
+    display: inline-block;
+    min-width: 19px;
+    padding: 1px 6px;
+    margin-left: 4px;
+    border-radius: 10px;
+    background: var(--fbr-gold);
+    color: var(--fbr-green-darker);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+    vertical-align: 1px;
+}
+
+/* --- Cards and panels --------------------------------------------------- */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+
+.panel-head {
+    background: var(--fbr-green-light);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--fbr-green-dark);
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.panel-body {
+    padding: 16px;
+}
+
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--fbr-green-dark);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 2px 0 0;
+}
+
+/* --- Stat tiles --------------------------------------------------------- */
+.stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--fbr-green);
+    border-radius: 6px;
+    padding: 14px 16px;
+    height: 100%;
+}
+
+.stat .stat-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.stat .stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--fbr-green-dark);
+}
+
+.stat .stat-note {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.stat.is-danger { border-left-color: var(--danger); }
+.stat.is-danger .stat-value { color: var(--danger); }
+.stat.is-warn { border-left-color: var(--warn); }
+.stat.is-warn .stat-value { color: var(--warn); }
+.stat.is-gold { border-left-color: var(--fbr-gold); }
+
+/* --- Tables ------------------------------------------------------------- */
+.table-register {
+    font-size: 13px;
+    margin: 0;
+}
+
+.table-register thead th {
+    background: var(--fbr-green);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    white-space: nowrap;
+    vertical-align: middle;
+    border-color: var(--fbr-green-dark);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.table-register tbody td {
+    vertical-align: middle;
+    border-color: var(--line);
+}
+
+.table-register tbody tr:hover {
+    background: var(--fbr-green-light);
+}
+
+.table-register tbody tr.row-overdue-180 { background: var(--danger-light); }
+.table-register tbody tr.row-overdue-180:hover { background: #fbdedb; }
+.table-register tbody tr.row-overdue-120 { background: var(--warn-light); }
+.table-register tbody tr.row-overdue-120:hover { background: #ffeecb; }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+
+/* --- Badges ------------------------------------------------------------- */
+.pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 11px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.pill-ok { background: var(--ok-light); color: var(--ok); border-color: #b7dfc4; }
+.pill-warn { background: var(--warn-light); color: var(--warn); border-color: #f0d9a8; }
+.pill-danger { background: var(--danger-light); color: var(--danger); border-color: #f3c3bf; }
+.pill-muted { background: #eef1ef; color: var(--muted); border-color: #dde2df; }
+.pill-info { background: var(--fbr-green-light); color: var(--fbr-green-dark); border-color: #bcdcca; }
+
+/* --- Forms -------------------------------------------------------------- */
+.form-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #3d4a43;
+    margin-bottom: 3px;
+}
+
+.form-control, .form-select {
+    font-size: 13.5px;
+    border-color: #ccd6d0;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--fbr-green-mid);
+    box-shadow: 0 0 0 .18rem rgba(0, 105, 62, .15);
+}
+
+.fieldset-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--fbr-green);
+    padding-bottom: 6px;
+    margin: 4px 0 14px;
+    border-bottom: 2px solid var(--fbr-green-light);
+}
+
+.required-star { color: var(--danger); }
+
+/* --- Buttons ------------------------------------------------------------ */
+.btn-fbr {
+    background: var(--fbr-green);
+    border-color: var(--fbr-green);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13.5px;
+}
+
+.btn-fbr:hover, .btn-fbr:focus {
+    background: var(--fbr-green-dark);
+    border-color: var(--fbr-green-dark);
+    color: #fff;
+}
+
+.btn-fbr-outline {
+    border-color: var(--fbr-green);
+    color: var(--fbr-green);
+    font-weight: 600;
+    font-size: 13.5px;
+    background: #fff;
+}
+
+.btn-fbr-outline:hover {
+    background: var(--fbr-green);
+    color: #fff;
+}
+
+.btn-sm { font-size: 12.5px; }
+
+/* --- Login -------------------------------------------------------------- */
+.login-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--fbr-green-darker) 0%, var(--fbr-green) 55%, var(--fbr-green-mid) 100%);
+    display: flex;
+    align-items: center;
+    padding: 24px 0;
+}
+
+.login-card {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+    border-top: 4px solid var(--fbr-gold);
+}
+
+.login-head {
+    text-align: center;
+    padding: 26px 24px 18px;
+    border-bottom: 1px solid var(--line);
+}
+
+.login-head .crest {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--fbr-green-light);
+    color: var(--fbr-green);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    border: 2px solid var(--fbr-gold);
+    margin-bottom: 12px;
+}
+
+/* Login card is white, so the mark needs no plate behind it. */
+.login-head .login-logo {
+    display: block;
+    width: 190px;
+    max-width: 70%;
+    height: auto;
+    margin: 0 auto 14px;
+}
+
+/* --- Detail view -------------------------------------------------------- */
+.detail-row {
+    display: flex;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line);
+    gap: 12px;
+}
+
+.detail-row:last-child { border-bottom: 0; }
+
+.detail-row dt {
+    flex: 0 0 44%;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 0;
+}
+
+.detail-row dd {
+    flex: 1;
+    margin: 0;
+    font-size: 13.5px;
+    word-break: break-word;
+}
+
+/* --- Footer ------------------------------------------------------------- */
+.site-footer {
+    background: var(--fbr-green-darker);
+    color: rgba(255, 255, 255, .7);
+    font-size: 12px;
+    padding: 14px 0;
+    margin-top: 32px;
+}
+
+/* --- Print -------------------------------------------------------------- */
+@media print {
+    .gov-strip, .main-nav, .site-footer, .no-print { display: none !important; }
+    body { background: #fff; }
+    .panel { border: 0; box-shadow: none; }
+}
+
+/* --- Printable documents card ------------------------------------------- */
+.doc-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+@media (min-width: 576px) {
+    .doc-buttons { grid-template-columns: 1fr 1fr; }
+}
+
+.doc-btn {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--fbr-green);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+    text-decoration: none;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+}
+
+.doc-btn:hover {
+    background: var(--fbr-green-light);
+    border-color: var(--fbr-green-mid);
+    border-left-color: var(--fbr-green-dark);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+    color: var(--ink);
+}
+
+.doc-btn i {
+    font-size: 21px;
+    color: var(--fbr-green);
+    flex: 0 0 auto;
+}
+
+.doc-btn span { display: flex; flex-direction: column; line-height: 1.3; }
+.doc-btn strong { font-size: 13.5px; font-weight: 600; color: var(--fbr-green-dark); }
+.doc-btn small { font-size: 11.5px; color: var(--muted); }

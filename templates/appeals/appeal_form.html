@@ -1,0 +1,197 @@
+{% extends "base/base.html" %}
+
+{% block title %}{% if appeal %}Edit{% else %}Register{% endif %} {{ cfg.label }} Appeal{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">
+            {% if appeal %}Edit Appeal &mdash; {{ appeal.appeal_no }}{% else %}Register {{ cfg.label }} Appeal{% endif %}
+        </h1>
+        <p class="page-subtitle">{{ cfg.label }} Appeals Register</p>
+    </div>
+    <a href="{% url cfg.list_url %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Register
+    </a>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
+{% endif %}
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {# Carries the record's last-saved time so the view can spot a clash. #}
+    {{ form.edited_at }}
+
+    <div class="row g-3">
+        <!-- Appeal particulars -->
+        <div class="col-lg-6">
+            <div class="panel h-100">
+                <div class="panel-head"><span><i class="bi bi-file-earmark-text me-1"></i> Appeal Particulars</span></div>
+                <div class="panel-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {% include "appeals/_field.html" with field=form.serial_no required=1 %}
+                            <div class="form-text" style="font-size:11.5px;">
+                                Enter the number only &mdash; the full Appeal No. is composed as
+                                <strong>{{ cfg.number_hint }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.date_of_institution required=1 %}</div>
+                        {% if register == "sales" %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.ntn %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.strn %}</div>
+                        {% else %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.ntn %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.cnic %}</div>
+                        {% endif %}
+                        <div class="col-12">{% include "appeals/_field.html" with field=form.appellant_name required=1 %}</div>
+                        {% if register == "sales" %}
+                        <div class="col-12">{% include "appeals/_field.html" with field=form.address %}</div>
+                        {% else %}
+                        <div class="col-12">{% include "appeals/_field.html" with field=form.address_line_1 %}</div>
+                        <div class="col-12">{% include "appeals/_field.html" with field=form.address_line_2 %}</div>
+                        {% endif %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.city %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.contact_no %}</div>
+                        {% if register == "sales" %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.tax_period %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.tax_year %}</div>
+                        {% else %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.tax_year %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessment / order under appeal -->
+        <div class="col-lg-6">
+            <div class="panel h-100">
+                <div class="panel-body">
+                    <p class="fieldset-title">Jurisdiction</p>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.zone %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.unit %}</div>
+                    </div>
+
+                    <p class="fieldset-title">Order Under Appeal</p>
+                    <div class="row g-3">
+                        {% if register == "sales" %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.oio_no %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.oio_date %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.date_of_service %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.section %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.sales_tax_involved %}</div>
+                        <div class="col-md-8">{% include "appeals/_field.html" with field=form.passing_officer_name %}</div>
+                        <div class="col-md-4">{% include "appeals/_field.html" with field=form.passing_officer_designation %}</div>
+                        {% else %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.order_section %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.date_of_assessment %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.date_of_service %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.income_assessed %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.revenue_involved %}</div>
+                        <div class="col-md-8">{% include "appeals/_field.html" with field=form.officer_name %}</div>
+                        <div class="col-md-4">{% include "appeals/_field.html" with field=form.officer_designation %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Representation and issues -->
+        <div class="col-lg-6">
+            <div class="panel h-100">
+                <div class="panel-head"><span><i class="bi bi-person-badge me-1"></i> Representation &amp; Issues</span></div>
+                <div class="panel-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.ar_name %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.ar_type %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.ar_registration_no %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.ar_contact_no %}</div>
+                        <div class="col-md-8">{% include "appeals/_field.html" with field=form.ar_address %}</div>
+                        <div class="col-md-4">{% include "appeals/_field.html" with field=form.ar_city %}</div>
+                        {% if register == "sales" %}
+                        <div class="col-12">{% include "appeals/_field.html" with field=form.issue_involved %}</div>
+                        {% else %}
+                        <div class="col-12">{% include "appeals/_field.html" with field=form.issues_involved %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decision and despatch -->
+        <div class="col-lg-6">
+            <div class="panel h-100">
+                <div class="panel-body">
+                    <p class="fieldset-title">Order-In-Appeal (leave blank while pending)</p>
+                    <div class="row g-3 mb-2">
+                        {% if register == "sales" %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.oia_no %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.oia_date %}</div>
+                        {% else %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.appellate_order_date %}</div>
+                        {% endif %}
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.decision_status %}</div>
+                    </div>
+
+                    <p class="fieldset-title">Despatch &amp; Service</p>
+                    <div class="row g-3">
+                        <div class="col-md-4">{% include "appeals/_field.html" with field=form.courier_no %}</div>
+                        <div class="col-md-4">{% include "appeals/_field.html" with field=form.courier_date %}</div>
+                        <div class="col-md-4">{% include "appeals/_field.html" with field=form.service_status %}</div>
+                    </div>
+
+                    <div class="alert alert-light border mt-3 mb-0 py-2" style="font-size:12.5px;">
+                        <i class="bi bi-info-circle me-1 text-success"></i>
+                        The <strong>120-day</strong> and <strong>180-day</strong> expiry dates are calculated
+                        automatically from the Date of Institution.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-fbr">
+            <i class="bi bi-check-lg me-1"></i>
+            {% if appeal %}Save Changes{% else %}Register Appeal{% endif %}
+        </button>
+        <a href="{% if appeal %}{% url cfg.detail_url appeal.pk %}{% else %}{% url cfg.list_url %}{% endif %}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Reload the Unit list whenever the Zone changes.
+(function () {
+    const zoneSel = document.getElementById('id_zone');
+    const unitSel = document.getElementById('id_unit');
+    if (!zoneSel || !unitSel) return;
+
+    zoneSel.addEventListener('change', function () {
+        const zoneId = this.value;
+        unitSel.innerHTML = '<option value="">-- Select Unit --</option>';
+        if (!zoneId) return;
+
+        fetch('/appeals/api/units/' + zoneId + '/')
+            .then(r => r.json())
+            .then(data => {
+                data.units.forEach(function (u) {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.textContent = u.name;
+                    unitSel.appendChild(opt);
+                });
+            })
+            .catch(() => {
+                unitSel.innerHTML = '<option value="">Could not load units</option>';
+            });
+    });
+})();
+</script>
+{% endblock %}

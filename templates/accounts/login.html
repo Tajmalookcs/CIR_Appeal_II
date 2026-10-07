@@ -1,0 +1,69 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | {{ OFFICE_SHORT }}</title>
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fbr.css' %}" rel="stylesheet">
+</head>
+<body>
+<div class="login-page">
+    <div class="container">
+        <div class="login-card">
+            <div class="login-head">
+                {% if OFFICE_LOGO %}
+                <img class="login-logo" src="{% static OFFICE_LOGO %}"
+                     alt="Federal Board of Revenue">
+                {% else %}
+                <div class="crest"><i class="bi bi-bank2"></i></div>
+                {% endif %}
+                <h1 style="font-size:16px;font-weight:700;color:var(--fbr-green-dark);margin:0;">
+                    {{ OFFICE_NAME }}
+                </h1>
+                <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0;">{{ OFFICE_SUBTITLE }}</p>
+                <p style="font-size:11px;color:var(--muted);margin:8px 0 0;text-transform:uppercase;letter-spacing:.8px;">
+                    Appeals Management System
+                </p>
+            </div>
+
+            <div class="p-4">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} py-2" style="font-size:13px;">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label" for="username">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   required autofocus autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password"
+                                   required autocomplete="current-password">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-fbr w-100 py-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                    </button>
+                </form>
+            </div>
+
+            <div class="text-center py-2" style="background:var(--fbr-green-light);font-size:11.5px;color:var(--muted);">
+                Authorised users only &middot; All activity is logged
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

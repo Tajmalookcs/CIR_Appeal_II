@@ -1,0 +1,78 @@
+{% extends "appeals/letter_base.html" %}
+
+{% comment %}
+The acknowledgment handed over when the Order-in-Appeal is collected. The
+office prints it without the crests, under its own centred heading, so the
+letterhead block is replaced rather than reused.
+{% endcomment %}
+
+{% block doc_title %}Order Receiving Slip{% endblock %}
+{% block print_label %}Print Slip{% endblock %}
+
+{% block extra_css %}
+        .slip-head { text-align: center; margin-bottom: 12mm; line-height: 1.5; }
+        .slip-head .title { font-weight: 700; font-size: 18px; letter-spacing: .5px; }
+        .slip-head .act { font-weight: 700; }
+        .slip-head .office { font-weight: 700; margin-top: 5mm; }
+
+        .slip-line { margin-bottom: 7mm; }
+        .slip-line .k { font-weight: 400; }
+        .slip-line .v { font-weight: 700; }
+
+        .slip-rule {
+            display: inline-block;
+            min-width: 70mm;
+            border-bottom: 1px solid #000;
+        }
+        .slip-sign { margin-top: 14mm; }
+        .slip-sign div { margin-bottom: 9mm; }
+{% endblock %}
+
+{% block letterhead %}
+    <div class="slip-head">
+        <div class="title">ACKNOWLEDGMENT</div>
+        <div class="act">(UNDER SECTION 56 OF THE SALES TAX ACT, 1990)</div>
+        <div class="office">OFFICE OF THE COMMISSIONER INLAND REVENUE (APPEALS-II),</div>
+        <div class="office">FAISALABAD</div>
+    </div>
+{% endblock %}
+
+{% block letter %}
+
+    <div class="refline">
+        <div class="no">
+            OIA #
+            {% if appeal.oia_no %}<span class="v">{{ appeal.oia_no }}</span>{% else %}<span class="slip-rule" style="min-width:35mm;">&nbsp;</span>{% endif %}
+        </div>
+        <div class="dated">
+            Dated:-
+            {% if appeal.oia_date %}<span class="v">{{ appeal.oia_date|date:"d.m.Y" }}</span>{% else %}<span class="slip-rule" style="min-width:35mm;">&nbsp;</span>{% endif %}
+        </div>
+    </div>
+
+    <div class="slip-line">
+        <span class="k">Name</span>
+        <span class="v">{{ appeal.appellant_name|default:"" }}</span>
+    </div>
+
+    <div class="slip-line">
+        <span class="k">Address:</span>
+        <span class="v">{{ appeal.address|default:"" }}{% if appeal.address and appeal.city %}, {% endif %}{{ appeal.city|default:"" }}</span>
+    </div>
+
+    <div class="slip-line">
+        <span class="k">Appeal No.</span>
+        <span class="v">{{ appeal.appeal_no }}</span>
+    </div>
+
+    <div class="slip-line">
+        <span class="k">ONO # &amp; Date Appeal Against</span>
+        <span class="v">{{ appeal.oio_no|default:"____" }}{% if appeal.oio_date %} &amp; {{ appeal.oio_date|date:"d-M-y" }}{% endif %}</span>
+    </div>
+
+    <div class="slip-sign">
+        <div>Received by: <span class="slip-rule">&nbsp;</span></div>
+        <div>Signature &amp; Date <span class="slip-rule" style="min-width:85mm;">&nbsp;</span></div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base/base.html" %}
+
+{% block title %}Delete {{ appeal.appeal_no }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="panel">
+            <div class="panel-head" style="background:var(--danger-light);color:var(--danger);">
+                <span><i class="bi bi-exclamation-triangle me-1"></i> Confirm Deletion</span>
+            </div>
+            <div class="panel-body">
+                <p style="font-size:14px;">
+                    You are about to permanently delete this {{ cfg.label }} appeal record.
+                    This cannot be undone.
+                </p>
+
+                <dl class="mb-3">
+                    <div class="detail-row"><dt>Appeal No.</dt><dd class="fw-bold">{{ appeal.appeal_no }}</dd></div>
+                    <div class="detail-row"><dt>Appellant</dt><dd>{{ appeal.appellant_name }}</dd></div>
+                    <div class="detail-row"><dt>Date of Institution</dt><dd>{{ appeal.date_of_institution|date:"d-m-Y" }}</dd></div>
+                    <div class="detail-row"><dt>Zone / Unit</dt><dd>{{ appeal.zone.name|default:"—" }} / {{ appeal.unit.name|default:"—" }}</dd></div>
+                </dl>
+
+                <div class="alert alert-warning py-2" style="font-size:12.5px;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    A full copy of this record will be kept in the audit log.
+                </div>
+
+                <form method="post" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Delete Permanently
+                    </button>
+                    <a href="{% url cfg.detail_url appeal.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

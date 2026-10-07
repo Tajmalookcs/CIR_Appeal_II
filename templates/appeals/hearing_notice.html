@@ -1,0 +1,124 @@
+{% extends "appeals/letter_base.html" %}
+
+{% block doc_title %}1st Hearing Notice{% endblock %}
+
+{% block extra_css %}
+        .party { margin-bottom: 5mm; line-height: 1.4; }
+        .party .name { font-weight: 700; }
+        .foot-sign { margin-top: 12mm; font-weight: 700; line-height: 1.4; }
+        .copy-para { margin-top: 6mm; text-align: justify; }
+        .encl { margin-top: 3mm; }
+
+        /* This notice must print on ONE A4 page. The shared letter spacing
+           ran it to ~363mm against 265mm available, so on paper it spilled
+           onto a second sheet even though the screen showed one tall page.
+           Tightened here only; the other letters keep the shared spacing. */
+        @page { size: A4 portrait; margin: 12mm 18mm; }
+        body { font-size: 14px; line-height: 1.45; }
+        .sheet { padding: 12mm 18mm; }
+        .letterhead .crests { margin-bottom: 3mm; }
+        .letterhead .crests .slot { min-height: 22mm; }
+        .letterhead .crests .crest-gop { height: 22mm; }
+        .letterhead .crests .crest-fbr { height: 17mm; }
+        .letterhead .crests .crest-irs { height: 15mm; }
+        .rule { margin: 2mm 0 4mm; }
+        .refline { margin-bottom: 5mm; }
+        .subject-block { margin-bottom: 4mm; }
+        .lead { margin-bottom: 3mm; }
+        .para { margin-bottom: 3mm; }
+        .signature { margin-top: 6mm; line-height: 1.3; }
+        .signature .space { height: 12mm; }
+{% endblock %}
+
+{% block toolbar_fields %}
+    <div class="field">
+        <label for="in-date">Hearing date</label>
+        <input id="in-date" type="date" data-fill="hearing-date">
+    </div>
+    <div class="field">
+        <label for="in-from">From</label>
+        <input id="in-from" type="text" size="9" value="10:00 A.M" data-fill="hearing-from">
+    </div>
+    <div class="field">
+        <label for="in-to">To</label>
+        <input id="in-to" type="text" size="9" value="11:00 A.M" data-fill="hearing-to">
+    </div>
+{% endblock %}
+
+{% block letter %}
+
+    <div class="refline">
+        <div class="no">No. <strong>{{ appeal.appeal_no }}</strong></div>
+        <div class="dated">Dated: {{ today|date:"d.m.Y" }}</div>
+    </div>
+
+    <div class="party">
+        <div class="name">{{ appeal.appellant_name|default:"" }}</div>
+        {% if appeal.address or appeal.city %}
+            <div>{{ appeal.address }}{% if appeal.address and appeal.city %}, {% endif %}{{ appeal.city }}</div>
+        {% endif %}
+        {% if appeal.ntn or appeal.strn %}
+            <div>NTN: {{ appeal.ntn|default:"—" }} / STRN: {{ appeal.strn|default:"—" }}</div>
+        {% endif %}
+        {% if appeal.ar_name %}
+            <div><strong>Through:</strong> {{ appeal.ar_name }}{% if appeal.ar_type %}, {{ appeal.ar_type }}{% endif %}</div>
+        {% endif %}
+    </div>
+
+    <div class="subject-block">
+        <div class="k">Subject:</div>
+        <div class="v">{{ subject }}</div>
+    </div>
+
+    <div class="lead">Please refer to the above noted subject.</div>
+
+    <div class="para">
+        <div class="n">2.</div>
+        <div class="t">
+            The Commissioner Inland Revenue (Appeals-II), Faisalabad has decided to hear
+            your above cited appeal on <span class="fill" id="hearing-date"></span>
+            <strong>in the office situated at Regional Tax Office, Jail Road, Faisalabad.</strong>
+            You are, therefore, required to make it convenient to appear before the
+            Commissioner Inland Revenue (Appeals-II), Faisalabad from
+            <span class="fill" id="hearing-from"></span> TO
+            <span class="fill" id="hearing-to"></span> in person or through your legal
+            representative on the fixed date and time.
+        </div>
+    </div>
+
+    <div class="para">
+        <div class="n">3.</div>
+        <div class="t">
+            You are also required to bring all the relevant record with the subject case
+            if any for perusal and consideration of the Commissioner Inland Revenue
+            (Appeals-II). In case no body appears, or no written reply / evidence is filed
+            on the said date and time, it will be presumed that the appellant has nothing
+            to say or produce any relevant record. Therefore, the appeal will be decided
+            ex-parte on the basis of evidences available on record. Soft copy of grounds
+            of appeals / written arguments please be sent on <strong>cirafsd@gmail.com</strong>.
+        </div>
+    </div>
+
+    <div class="signature">
+        <div class="space"></div>
+        <div>For Commissioner</div>
+        <div>Inland Revenue (Appeals-II)</div>
+    </div>
+
+    <div class="copy-para">
+        Copy to the Commissioner, Inland Revenue,
+        ({{ appeal.zone.name|default:"________________" }}) RTO, Faisalabad with the
+        request to depute the officer concerned on behalf of the department along with
+        detailed Para-wise comments / reply to the appeal memo on the above mentioned
+        date and time.
+    </div>
+
+    <div class="encl">Encl: (Copy of Appeal Memo)</div>
+
+    <div class="signature">
+        <div class="space"></div>
+        <div>For Commissioner</div>
+        <div>Inland Revenue (Appeals-II)</div>
+    </div>
+
+{% endblock %}

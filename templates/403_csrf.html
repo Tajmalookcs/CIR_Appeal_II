@@ -1,0 +1,62 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Expired</title>
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fbr.css' %}" rel="stylesheet">
+</head>
+<body>
+{# Shown when a form is submitted with an expired or missing security token. #}
+{# Standalone by design - the user has no valid session at this point.       #}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="panel">
+                <div class="panel-head" style="background:var(--warn-light);color:var(--warn);">
+                    <span><i class="bi bi-clock-history me-1"></i> Session Expired</span>
+                </div>
+                <div class="panel-body py-4">
+                    <p style="font-size:14.5px;">
+                        The page you submitted was open for too long, or the system was
+                        restarted while it was open. For security, the form could not be
+                        accepted.
+                    </p>
+                    <p style="font-size:14px;" class="mb-3">
+                        <strong>Nothing has been lost.</strong> Sign in again and continue.
+                    </p>
+
+                    <a href="/accounts/login/" class="btn btn-fbr">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Go to Sign In
+                    </a>
+
+                    <hr class="my-4">
+
+                    <p class="mb-2" style="font-size:12.5px;font-weight:600;color:var(--muted);
+                              text-transform:uppercase;letter-spacing:.5px;">
+                        If it happens again
+                    </p>
+                    <ol style="font-size:13px;" class="text-muted mb-0 ps-3">
+                        <li class="mb-1">
+                            Press <strong>Ctrl + Shift + R</strong> on the sign-in page to
+                            reload it fully.
+                        </li>
+                        <li class="mb-1">
+                            If that does not help, clear this site's cookies:
+                            click the padlock or icon at the left of the address bar,
+                            then <em>Cookies and site data</em> &rarr; <em>Delete</em>.
+                        </li>
+                        <li>
+                            Check that cookies are not blocked for this address in your
+                            browser settings.
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

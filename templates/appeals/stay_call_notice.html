@@ -1,0 +1,99 @@
+{% extends "appeals/letter_base.html" %}
+
+{% block doc_title %}Stay Call Notice{% endblock %}
+
+{% block extra_css %}
+        .party { margin-bottom: 8mm; line-height: 1.5; }
+        .party .name { font-weight: 700; }
+        .copy-para { margin-top: 10mm; text-align: justify; }
+        .encl { margin-top: 6mm; }
+{% endblock %}
+
+{% block toolbar_fields %}
+    <div class="field">
+        <label for="in-app">Application dated</label>
+        <input id="in-app" type="date" data-fill="application-date">
+    </div>
+    <div class="field">
+        <label for="in-appear">Appear on</label>
+        <input id="in-appear" type="date" data-fill="appearance-date">
+    </div>
+    <div class="field">
+        <label for="in-time">At about</label>
+        <input id="in-time" type="text" size="9" placeholder="10:00 A.M" data-fill="appearance-time">
+    </div>
+{% endblock %}
+
+{% block letter %}
+
+    <div class="refline">
+        <div class="no">C. No. <strong>{{ appeal.appeal_no }}</strong></div>
+        <div class="dated">Dated: {{ today|date:"d.m.Y" }}</div>
+    </div>
+
+    <div class="to">To</div>
+    <div class="party" style="margin-left:22mm;">
+        <div class="name">{{ appeal.appellant_name|default:"" }}</div>
+        {% if appeal.address or appeal.city %}
+            <div>{{ appeal.address }}{% if appeal.address and appeal.city %}, {% endif %}{{ appeal.city }}</div>
+        {% endif %}
+        {% if appeal.ntn or appeal.strn %}
+            <div>NTN: {{ appeal.ntn|default:"—" }} / STRN: {{ appeal.strn|default:"—" }}</div>
+        {% endif %}
+        {% if appeal.ar_name %}
+            <div><strong>Through:</strong> {{ appeal.ar_name }}{% if appeal.ar_type %}, {{ appeal.ar_type }}{% endif %}</div>
+            {% if appeal.ar_address or appeal.ar_city %}
+                <div>{{ appeal.ar_address }}{% if appeal.ar_address and appeal.ar_city %}, {% endif %}{{ appeal.ar_city }}</div>
+            {% endif %}
+            <div>Ph: {{ appeal.ar_contact_no }}</div>
+        {% endif %}
+    </div>
+
+    <div class="subject-block">
+        <div class="k">Subject:</div>
+        <div class="v">Call Notice</div>
+    </div>
+
+    <div class="lead">
+        Please refer to your application dated
+        <span class="fill" id="application-date"></span> regarding adjournment of stay of
+        recovery and early hearing of appeal against Sales Tax Order in Original No.
+        {{ appeal.oio_no|default:"____" }}{% if appeal.oio_date %} dated {{ appeal.oio_date|date:"d-M-y" }}{% endif %}
+        passed by the {{ appeal.passing_officer|default:"________________" }}{% if appeal.unit %}, {{ appeal.unit.name }}{% endif %}{% if appeal.zone %} {{ appeal.zone.name }}{% endif %}.
+    </div>
+
+    <div class="para">
+        <div class="n">2.</div>
+        <div class="t">
+            You are, therefore, required to make it convenient to appear before the
+            undersigned in person or through legal representative on
+            <span class="fill" id="appearance-date"></span> at about
+            <span class="fill" id="appearance-time"></span>
+            <strong>in the office situated at Regional Tax Office, Jail Road, Faisalabad,</strong>
+            to represent your claim, failing which the application will be rejected,
+            accordingly.
+        </div>
+    </div>
+
+    <div class="signature">
+        <div class="space"></div>
+        <div>For Commissioner</div>
+        <div>Inland Revenue (Appeals-II)</div>
+    </div>
+
+    <div class="copy-para">
+        Copy to the Commissioner I.R, {{ appeal.zone.name|default:"________________" }},
+        RTO, Faisalabad with the request to depute the officer concerned on behalf of the
+        department along with detailed Para-wise comments / reply to the appeal memo on
+        the above mentioned date and time.
+    </div>
+
+    <div class="encl">Encl: (Copy of Appeal Memo)</div>
+
+    <div class="signature">
+        <div class="space"></div>
+        <div>For Commissioner</div>
+        <div>Inland Revenue (Appeals-II)</div>
+    </div>
+
+{% endblock %}

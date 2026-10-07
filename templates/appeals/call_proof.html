@@ -1,0 +1,55 @@
+{% extends "appeals/letter_base.html" %}
+
+{% block doc_title %}Call Proof{% endblock %}
+
+{% block letter %}
+
+    <div class="refline">
+        <div class="no">No. <span class="blank">&nbsp;</span></div>
+        <div class="dated">Dated: {{ today|date:"d-m-Y" }}</div>
+    </div>
+
+    <div class="to">To,</div>
+    <div class="addressee">
+        The Unit Officer<br>
+        {% if appeal.unit %}{{ appeal.unit.name }}, {% endif %}{{ appeal.zone.name|default:"________________" }},<br>
+        RTO, Faisalabad
+    </div>
+
+    <div class="subject-block">
+        <div class="k">Subject:</div>
+        <div class="v">{{ subject }}</div>
+    </div>
+
+    <div class="lead">Please refer to the subject cited above.</div>
+
+    <div class="para">
+        <div class="n">2.</div>
+        <div class="t editable" contenteditable="true" spellcheck="false">
+            During the hearing in the above-titled case, the learned counsel assailed
+            that the order has not been served upon the appellant in time or received
+            late. You are therefore requested to provide proof of service i.e.
+            electronic /ums/courier or through notice server, within seven days of the
+            receipt of this letter, so that the case condonation request of the
+            appellant could be decided judiciously before going into the merits of the
+            case.
+        </div>
+    </div>
+
+    <div class="edit-hint">
+        Paragraph 2 can be reworded here before printing. The change is not saved &mdash;
+        reloading the page restores the standard text.
+    </div>
+
+    <div class="para">
+        <div class="n">3.</div>
+        <div class="t">An early response will be highly appreciated.</div>
+    </div>
+
+    <div class="signature">
+        <div class="space"></div>
+        <div>For Commissioner-IR</div>
+        <div>Appeals-II</div>
+    </div>
+
+{% endblock %}

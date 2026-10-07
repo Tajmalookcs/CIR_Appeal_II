@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h1 class="page-title mb-3">My Profile</h1>
+        <div class="panel">
+            <div class="panel-head"><span><i class="bi bi-person-circle me-1"></i> Account Details</span></div>
+            <div class="panel-body">
+                <dl class="mb-0">
+                    <div class="detail-row"><dt>Username</dt><dd class="fw-semibold">{{ user.username }}</dd></div>
+                    <div class="detail-row"><dt>Full Name</dt><dd>{{ user.full_name|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Designation</dt><dd>{{ user.designation|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Role</dt><dd><span class="pill pill-info">{{ user.get_role_display }}</span></dd></div>
+                    <div class="detail-row"><dt>Contact No.</dt><dd>{{ user.contact_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Email</dt><dd>{{ user.email|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Last Login</dt><dd>{{ user.last_login|date:"d-m-Y H:i"|default:"—" }}</dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

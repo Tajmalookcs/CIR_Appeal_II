@@ -1,0 +1,107 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">Audit Log</h1>
+        <p class="page-subtitle">{{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }} recorded</p>
+    </div>
+</div>
+
+<div class="panel mb-3 no-print">
+    <div class="panel-head"><span><i class="bi bi-funnel me-1"></i> Filter</span></div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Action</label>
+                <select name="action" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    {% for value, label in action_choices %}
+                    <option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">User</label>
+                <input type="text" name="user" value="{{ filters.user }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Record Type</label>
+                <input type="text" name="model" value="{{ filters.model }}" class="form-control form-control-sm"
+                       placeholder="e.g. Sales Tax Appeal">
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">From</label>
+                <input type="date" name="from" value="{{ filters.from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">To</label>
+                <input type="date" name="to" value="{{ filters.to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 d-flex gap-2">
+                <button type="submit" class="btn btn-fbr btn-sm flex-grow-1">Apply</button>
+                <a href="{% url 'core:audit_log' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="table-responsive" style="max-height:68vh;">
+        <table class="table table-register table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Record Type</th>
+                    <th>Record</th>
+                    <th>Changes</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="nowrap">{{ log.timestamp|date:"d-m-Y H:i:s" }}</td>
+                    <td>{{ log.actor }}</td>
+                    <td class="nowrap">
+                        {% if log.action == "delete" %}<span class="pill pill-danger">{{ log.get_action_display }}</span>
+                        {% elif log.action == "create" %}<span class="pill pill-ok">{{ log.get_action_display }}</span>
+                        {% elif log.action == "login_failed" %}<span class="pill pill-danger">{{ log.get_action_display }}</span>
+                        {% elif log.action == "update" %}<span class="pill pill-warn">{{ log.get_action_display }}</span>
+                        {% else %}<span class="pill pill-muted">{{ log.get_action_display }}</span>{% endif %}
+                    </td>
+                    <td class="nowrap">{{ log.model_name|default:"—" }}</td>
+                    <td class="text-truncate" style="max-width:240px;">{{ log.object_repr|default:"—" }}</td>
+                    <td class="text-truncate" style="max-width:280px;font-size:12px;">{{ log.change_summary|default:"—" }}</td>
+                    <td class="nowrap" style="font-size:12px;">{{ log.ip_address|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-5" style="font-size:13px;">No log entries match the filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="panel-body border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span style="font-size:12.5px;" class="text-muted">
+            Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ total_count|intcomma }}
+        </span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Previous</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Next</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% comment %}
+One sortable register heading. Expects `col` from views.sort_columns plus the
+visible `label`, and optionally a smaller `sub` line underneath. Clicking the
+active column flips its direction; any other column starts ascending. The link
+carries `sort_querystring` so the clerk's filters survive the click.
+{% endcomment %}
+<a class="sort-link{% if col.active %} sort-active{% endif %}"
+   href="?{% if sort_querystring %}{{ sort_querystring }}&amp;{% endif %}sort={{ col.key }}&amp;dir={{ col.next_dir }}"
+   title="Sort by {{ label }}{% if col.active %}, currently {% if col.dir == 'asc' %}ascending{% else %}descending{% endif %}{% endif %}">
+    <span>{{ label }}{% if sub %}<br><small style="font-weight:400;opacity:.8;">{{ sub }}</small>{% endif %}</span>
+    {% if col.active %}
+        <i class="bi bi-caret-{% if col.dir == 'asc' %}up{% else %}down{% endif %}-fill sort-icon"></i>
+    {% else %}
+        <i class="bi bi-arrow-down-up sort-icon sort-icon-idle"></i>
+    {% endif %}
+</a>

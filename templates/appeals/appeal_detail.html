@@ -1,0 +1,309 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}{{ appeal.appeal_no }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">{{ appeal.appeal_no }}</h1>
+        <p class="page-subtitle">{{ cfg.label }} Appeal &middot; {{ appeal.appellant_name }}</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="{% url cfg.list_url %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Register
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+        {% if user.can_edit %}
+        <a href="{% url cfg.update_url appeal.pk %}" class="btn btn-fbr btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        {% endif %}
+        {% if user.can_delete %}
+        <a href="{% url cfg.delete_url appeal.pk %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash me-1"></i> Delete
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- The three statutory clocks, kept separate -->
+<div class="panel mb-3">
+    <div class="panel-head"><span><i class="bi bi-calendar-check me-1"></i> Limitation</span></div>
+    <div class="panel-body">
+        <div class="row g-3">
+
+            <!-- Rule 1: the appellant's filing window -->
+            <div class="col-lg-4">
+                <div class="stat h-100 {% if appeal.filed_late %}is-danger{% endif %}">
+                    <div class="stat-label">1 &middot; Filing &mdash; 30 Days</div>
+                    <div style="font-size:17px;font-weight:700;line-height:1.3;">
+                        {% if appeal.filed_late %}
+                            <span style="color:var(--danger);">{{ appeal.filing_status }}</span>
+                        {% else %}
+                            <span style="color:var(--ok);">{{ appeal.filing_status }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="stat-note">
+                        Order served {{ appeal.filing_clock_start|date:"d-m-Y"|default:"—" }},
+                        appeal filed {{ appeal.date_of_institution|date:"d-m-Y" }}
+                    </div>
+                    <div class="stat-note">Appellant&rsquo;s obligation</div>
+                </div>
+            </div>
+
+            <!-- Rule 2: decide within 120 days -->
+            <div class="col-lg-4">
+                <div class="stat h-100 {% if appeal.exceeded_120 and not appeal.is_decided %}is-warn{% endif %}">
+                    <div class="stat-label">2 &middot; Decide By &mdash; 120 Days</div>
+                    <div style="font-size:17px;font-weight:700;">
+                        {{ appeal.first_expiry_120|date:"d-m-Y"|default:"—" }}
+                    </div>
+                    <div class="stat-note">
+                        {% if appeal.is_decided %}Decided {{ appeal.decision_date|date:"d-m-Y" }}
+                        {% else %}{{ appeal.status_120 }}{% endif %}
+                    </div>
+                    <div class="stat-note">This office&rsquo;s obligation</div>
+                </div>
+            </div>
+
+            <!-- Rule 3: extension, which needs approval -->
+            <div class="col-lg-4">
+                <div class="stat h-100 {% if appeal.exceeded_180 and not appeal.is_decided %}is-danger{% endif %}">
+                    <div class="stat-label">3 &middot; Extension &mdash; 180 Days</div>
+                    <div style="font-size:17px;font-weight:700;">
+                        {{ appeal.second_expiry_180|date:"d-m-Y"|default:"—" }}
+                    </div>
+                    <div class="stat-note">
+                        {% if appeal.is_decided %}Decided {{ appeal.decision_date|date:"d-m-Y" }}
+                        {% else %}{{ appeal.status_180 }}{% endif %}
+                    </div>
+                    <div class="stat-note">Requires special approval</div>
+                </div>
+            </div>
+        </div>
+
+        {% if appeal.needs_special_approval %}
+        <div class="alert alert-warning mt-3 mb-0 py-2" style="font-size:13px;">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Past the 120-day limit and still undecided &mdash;
+            <strong>special approval is required</strong> to use the extension to 180 days.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Appellant -->
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head"><span><i class="bi bi-person me-1"></i> Appellant</span></div>
+            <div class="panel-body">
+                <dl class="mb-0">
+                    <div class="detail-row"><dt>Name of Appellant</dt><dd>{{ appeal.appellant_name }}</dd></div>
+                    <div class="detail-row"><dt>NTN</dt><dd>{{ appeal.ntn|default:"—" }}</dd></div>
+                    {% if register == "sales" %}
+                    <div class="detail-row"><dt>STRN</dt><dd>{{ appeal.strn|default:"—" }}</dd></div>
+                    {% else %}
+                    <div class="detail-row"><dt>CNIC</dt><dd>{{ appeal.cnic|default:"—" }}</dd></div>
+                    {% endif %}
+                    <div class="detail-row"><dt>Address</dt><dd>{{ appeal.address|default:"—"|linebreaksbr }}</dd></div>
+                    <div class="detail-row"><dt>City</dt><dd>{{ appeal.city|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Contact No.</dt><dd>{{ appeal.contact_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Date of Service of Order</dt><dd>{{ appeal.date_of_service|date:"d-m-Y"|default:"—" }}</dd></div>
+                    <div class="detail-row">
+                        <dt>{% if register == "sales" %}Name of AR{% else %}Advocate / ITP / AR{% endif %}</dt>
+                        <dd>{{ appeal.ar_name|default:"—" }}</dd>
+                    </div>
+                    <div class="detail-row"><dt>AR Type</dt><dd>{{ appeal.ar_type|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Registration No. of AR</dt><dd>{{ appeal.ar_registration_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Contact No. of AR</dt><dd>{{ appeal.ar_contact_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Address of AR</dt><dd>{{ appeal.ar_address|default:"—" }}{% if appeal.ar_city %}, {{ appeal.ar_city }}{% endif %}</dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order under appeal -->
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head"><span><i class="bi bi-file-earmark-ruled me-1"></i> Order Under Appeal</span></div>
+            <div class="panel-body">
+                <dl class="mb-0">
+                    <div class="detail-row"><dt>Zone</dt><dd>{{ appeal.zone.name|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Unit</dt><dd>{{ appeal.unit.name|default:"—" }}</dd></div>
+                    {% if register == "sales" %}
+                    <div class="detail-row"><dt>Order-In-Original No.</dt><dd>{{ appeal.oio_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Order-In-Original Date</dt><dd>{{ appeal.oio_date|date:"d-m-Y"|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Section</dt><dd>{{ appeal.section|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Tax Period</dt><dd>{{ appeal.tax_period|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Passing Officer</dt><dd>{{ appeal.passing_officer_name|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Designation</dt><dd>{{ appeal.passing_officer_designation|default:"—" }}</dd></div>
+                    <div class="detail-row">
+                        <dt>Sales Tax Involved</dt>
+                        <dd class="fw-bold">Rs. {{ appeal.sales_tax_involved|floatformat:0|intcomma }}</dd>
+                    </div>
+                    {% else %}
+                    <div class="detail-row"><dt>Tax Year</dt><dd>{{ appeal.tax_year|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Order Section</dt><dd>{{ appeal.order_section|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Date of Assessment</dt><dd>{{ appeal.date_of_assessment|date:"d-m-Y"|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Name of Officer</dt><dd>{{ appeal.officer_name|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Designation</dt><dd>{{ appeal.officer_designation|default:"—" }}</dd></div>
+                    <div class="detail-row">
+                        <dt>Income Assessed</dt>
+                        <dd class="fw-bold">Rs. {{ appeal.income_assessed|floatformat:0|intcomma }}</dd>
+                    </div>
+                    <div class="detail-row">
+                        <dt>Revenue Involved</dt>
+                        <dd class="fw-bold">Rs. {{ appeal.revenue_involved|floatformat:0|intcomma }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issues (compact) + printable documents -->
+    <div class="col-lg-6">
+        <div class="panel mb-3">
+            <div class="panel-head"><span><i class="bi bi-question-circle me-1"></i> Issue(s) Involved</span></div>
+            <div class="panel-body py-2">
+                <p class="mb-0" style="font-size:13px;white-space:pre-wrap;max-height:86px;overflow-y:auto;">{% if register == "sales" %}{{ appeal.issue_involved|default:"—" }}{% else %}{{ appeal.issues_involved|default:"—" }}{% endif %}</p>
+            </div>
+        </div>
+
+        <div class="panel no-print">
+            <div class="panel-head"><span><i class="bi bi-printer me-1"></i> Print Documentations</span></div>
+            <div class="panel-body">
+                <div class="doc-buttons">
+                    <a href="{% url cfg.cover_url appeal.pk %}" target="_blank" class="doc-btn">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>
+                            <strong>File Cover</strong>
+                            <small>Slip for the file jacket</small>
+                        </span>
+                    </a>
+
+                    <a href="{% url cfg.call_proof_url appeal.pk %}" target="_blank" class="doc-btn">
+                        <i class="bi bi-envelope-paper"></i>
+                        <span>
+                            <strong>Call Proof</strong>
+                            <small>Letter to the Unit Officer seeking proof of service</small>
+                        </span>
+                    </a>
+
+                    <a href="{% url cfg.order_sheet_url appeal.pk %}" target="_blank" class="doc-btn">
+                        <i class="bi bi-journal-text"></i>
+                        <span>
+                            <strong>Notesheet</strong>
+                            <small>Opening noting on 8.5&times;13 folio, ruled for hearings</small>
+                        </span>
+                    </a>
+
+                    {% if cfg.receiving_slip_url %}
+                    <a href="{% url cfg.receiving_slip_url appeal.pk %}" target="_blank" class="doc-btn">
+                        <i class="bi bi-card-checklist"></i>
+                        <span>
+                            <strong>Order Receiving Slip</strong>
+                            <small>Acknowledgment under section 56 for the collected order</small>
+                        </span>
+                    </a>
+                    {% endif %}
+
+                    {% if cfg.hearing_notice_url %}
+                    <a href="{% url cfg.hearing_notice_url appeal.pk %}" target="_blank" class="doc-btn">
+                        <i class="bi bi-calendar-event"></i>
+                        <span>
+                            <strong>1st Hearing Notice</strong>
+                            <small>Notice to the appellant fixing the first hearing</small>
+                        </span>
+                    </a>
+                    {% endif %}
+
+                    {% if cfg.stay_call_url %}
+                    <a href="{% url cfg.stay_call_url appeal.pk %}" target="_blank" class="doc-btn">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span>
+                            <strong>Stay Call Notice</strong>
+                            <small>Call notice on a stay adjournment or early hearing request</small>
+                        </span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decision -->
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head"><span><i class="bi bi-gavel me-1"></i> Decision &amp; Service</span></div>
+            <div class="panel-body">
+                <dl class="mb-0">
+                    {% if register == "sales" %}
+                    <div class="detail-row"><dt>Order-In-Appeal No.</dt><dd>{{ appeal.oia_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Order-In-Appeal Date</dt><dd>{{ appeal.oia_date|date:"d-m-Y"|default:"Pending" }}</dd></div>
+                    {% else %}
+                    <div class="detail-row"><dt>Date of Appellate Order</dt><dd>{{ appeal.appellate_order_date|date:"d-m-Y"|default:"Pending" }}</dd></div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <dt>Status</dt>
+                        <dd>
+                            {% if appeal.is_decided %}
+                                <span class="pill pill-info">{{ appeal.get_decision_status_display }}</span>
+                            {% else %}
+                                <span class="pill pill-muted">Pending</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="detail-row"><dt>Courier No.</dt><dd>{{ appeal.courier_no|default:"—" }}</dd></div>
+                    <div class="detail-row"><dt>Courier Date</dt><dd>{{ appeal.courier_date|date:"d-m-Y"|default:"—" }}</dd></div>
+                    <div class="detail-row">
+                        <dt>Service Status</dt>
+                        <dd>
+                            {% if appeal.service_status == "delivered" %}<span class="pill pill-ok">Delivered</span>
+                            {% elif appeal.service_status == "returned" %}<span class="pill pill-danger">Returned</span>
+                            {% else %}<span class="pill pill-muted">Pending</span>{% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record history -->
+    {% if user.can_view_logs %}
+    <div class="col-12">
+        <div class="panel">
+            <div class="panel-head"><span><i class="bi bi-clock-history me-1"></i> Record History</span></div>
+            <div class="panel-body p-0">
+                {% if history %}
+                <table class="table table-register table-hover mb-0">
+                    <thead><tr><th>When</th><th>User</th><th>Action</th><th>Fields Changed</th></tr></thead>
+                    <tbody>
+                        {% for log in history %}
+                        <tr>
+                            <td class="nowrap">{{ log.timestamp|date:"d-m-Y H:i" }}</td>
+                            <td>{{ log.actor }}</td>
+                            <td><span class="pill pill-info">{{ log.get_action_display }}</span></td>
+                            <td style="font-size:12px;">{{ log.change_summary|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0" style="font-size:13px;">No history recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<p class="text-muted mt-3 mb-0" style="font-size:11.5px;">
+    Registered by {{ appeal.created_by_name|default:"—" }} on {{ appeal.created_at|date:"d-m-Y H:i" }}
+    &middot; Last updated by {{ appeal.updated_by_name|default:"—" }} on {{ appeal.updated_at|date:"d-m-Y H:i" }}
+</p>
+{% endblock %}

@@ -1,0 +1,252 @@
+{% load static humanize %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notesheet &mdash; {{ appeal.appeal_no }}</title>
+    <style>
+        /* Folio / legal stock used by the office: 8.5in x 13in. */
+        @page { size: 8.5in 13in; margin: 0.5in 0.55in; }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Times New Roman", Georgia, serif;
+            font-size: 15px;
+            line-height: 1.55;
+            color: #000;
+            background: #eee;
+            margin: 0;
+            padding: 18px;
+        }
+
+        .sheet {
+            width: 8.5in;
+            min-height: 13in;
+            margin: 0 auto;
+            background: #fff;
+            padding: 0.5in 0.55in;
+        }
+
+        /* --- Heading -------------------------------------------------------- */
+        .head { text-align: center; margin-bottom: 5mm; }
+        .head .title {
+            font-size: 26px;
+            letter-spacing: 1px;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .head .party {
+            font-size: 24px;
+            margin-top: 1mm;
+            text-transform: uppercase;
+        }
+        .head .appeal-no {
+            font-size: 19px;
+            font-weight: 700;
+            margin-top: 1.5mm;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        /* --- Notesheet grid ------------------------------------------------- */
+        /* Only the outer frame, the rule under the headings, and the column
+           dividers are drawn - no horizontal lines between notings. */
+        table.notesheet {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            border: 1px solid #000;
+        }
+        table.notesheet th,
+        table.notesheet td {
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 0;
+            border-bottom: 0;
+            vertical-align: top;
+        }
+        table.notesheet thead th {
+            border-bottom: 1px solid #000;
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+            padding: 2mm;
+        }
+        table.notesheet td { padding: 3mm 3mm 5mm; }
+
+        td.c-date { text-align: center; white-space: nowrap; }
+        td.c-sr { text-align: center; }
+        td.c-part { text-align: justify; }
+
+        /* A single open row runs to the foot of the sheet for handwritten notings. */
+        tr.open td { height: 4.6in; }
+
+        .strong { font-weight: 700; }
+
+        .sign {
+            margin-top: 10mm;
+            text-align: right;
+            padding-right: 8mm;
+            line-height: 1.35;
+        }
+        .sign .space { height: 12mm; }
+        .sign .name { font-weight: 700; }
+
+        .fill { display: inline-block; border-bottom: 1px solid #000; min-width: 34mm; }
+        .cir { float: right; font-weight: 700; }
+
+        /* --- Screen-only toolbar -------------------------------------------- */
+        .toolbar {
+            max-width: 8.5in;
+            margin: 0 auto 12px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+        }
+        .toolbar button, .toolbar a {
+            font-size: 13px;
+            padding: 7px 14px;
+            border-radius: 4px;
+            border: 1px solid #00693e;
+            background: #00693e;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .toolbar a.secondary { background: #fff; color: #00693e; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .toolbar { display: none !important; }
+            .sheet { width: auto; min-height: 0; margin: 0; padding: 0; }
+            /* Column headings repeat if the notings run to a second sheet. */
+            thead { display: table-header-group; }
+            tr { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <a class="secondary" href="{% url cfg.detail_url appeal.pk %}">&larr; Back to Record</a>
+    <button onclick="window.print()">Print Notesheet</button>
+</div>
+
+<div class="sheet">
+
+    <div class="head">
+        <div class="title">NOTESHEET</div>
+        <div class="party">
+            {{ appeal.appellant_name }}{% if appeal.city %}, {{ appeal.city }}{% endif %}
+        </div>
+        <div class="appeal-no">{{ appeal.appeal_no }}</div>
+    </div>
+
+    <table class="notesheet">
+        <colgroup>
+            <col style="width:1.15in">
+            <col style="width:0.6in">
+            <col>
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Sr.</th>
+                <th>Particulars</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="c-date">{{ today|date:"d.m.Y" }}</td>
+                <td class="c-sr">1.</td>
+                <td class="c-part">
+                    <span class="strong">{{ appeal.appellant_name }}</span>{% if appeal.city %}, {{ appeal.city }}{% endif %}
+                    {% if register == "sales" %}
+                        have filed an appeal against Sales Tax Order-in-Original
+                        No.{{ appeal.oio_no|default:"____" }}
+                        dated {{ appeal.oio_date|date:"d-M-y"|default:"____" }}
+                        passed by the {{ appeal.passing_officer|default:"____" }}.
+                    {% else %}
+                        have filed an appeal against the assessment order passed under
+                        section {{ appeal.order_section|default:"____" }}
+                        dated {{ appeal.date_of_assessment|date:"d-M-y"|default:"____" }}
+                        passed by the {{ appeal.officer_name|default:"____" }}{% if appeal.officer_designation %}, {{ appeal.officer_designation }}{% endif %}
+                        {% if appeal.tax_year %}for Tax Year {{ appeal.tax_year }}{% endif %}.
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <td class="c-date">&nbsp;</td>
+                <td class="c-sr">2.</td>
+                <td class="c-part">
+                    The case was decided on
+                    <span class="strong">{{ order_date|date:"d-M-y"|default:"____" }}</span>
+                    whereas an appeal has been filed on,
+                    <span class="strong">{{ appeal.date_of_institution|date:"d-M-y" }}</span>,
+                    thus the appeal was received
+                    {% if appeal.filing_dates_inconsistent %}
+                        &mdash; dates require verification &mdash;
+                    {% elif appeal.filed_late %}
+                        <span class="strong">late by {{ appeal.filing_delay_days }} days</span>
+                    {% else %}
+                        <span class="strong">within time</span>
+                    {% endif %}
+                    and registered as <span class="strong">{{ appeal.appeal_no }}</span>.
+                </td>
+            </tr>
+
+            <tr>
+                <td class="c-date">&nbsp;</td>
+                <td class="c-sr">3.</td>
+                <td class="c-part">
+                    As directed Memo of Appeal has been sent to the Commissioner Inland
+                    Revenue, {{ appeal.zone.name|default:"____" }}, Regional Tax Office
+                    Faisalabad, with the request to depute concerned officer on behalf of
+                    the department along with detailed parawise comments /reply to the
+                    appeal memos.
+                </td>
+            </tr>
+
+            <tr>
+                <td class="c-date">&nbsp;</td>
+                <td class="c-sr">4.</td>
+                <td class="c-part">
+                    Submitted please.
+                    <div class="sign">
+                        <div class="space"></div>
+                        <div class="name">({{ prepared_by }})</div>
+                        <div>{{ prepared_by_designation }}</div>
+                    </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="c-date">&nbsp;</td>
+                <td class="c-sr">&nbsp;</td>
+                <td class="c-part">
+                    The Case is fixed for hearing on <span class="fill">&nbsp;</span>
+                    as per hearing Schedule.
+                    <span class="cir">CIR(A-II)</span>
+                </td>
+            </tr>
+
+            {# One open row: further notings are written by hand, not on ruled lines. #}
+            <tr class="open">
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<script>
+    if (new URLSearchParams(location.search).get("print") === "1") {
+        window.addEventListener("load", () => window.print());
+    }
+</script>
+</body>
+</html>

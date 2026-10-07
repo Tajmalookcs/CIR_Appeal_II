@@ -1,0 +1,27 @@
+{% comment %}
+One of the two aging tables on the MPR proforma. Both use the same five age
+buckets, so the markup lives here once. `rows` is the list built by
+views._age_table, or empty when the proforma is printed blank.
+{% endcomment %}
+<table>
+    <tr>
+        {% for label in age_buckets %}<th colspan="2">{{ label }}</th>{% endfor %}
+    </tr>
+    <tr>
+        {% for label in age_buckets %}
+        <th style="width:8%;">No. of Cases</th>
+        <th style="width:12%;">Revenue Involved (M)</th>
+        {% endfor %}
+    </tr>
+    <tr>
+        {% for row in rows %}
+        <td class="val auto">{{ row.cases }}</td>
+        <td class="val auto">{{ row.revenue }}</td>
+        {% empty %}
+        {% for label in age_buckets %}
+        <td class="val fill"></td>
+        <td class="val fill"></td>
+        {% endfor %}
+        {% endfor %}
+    </tr>
+</table>

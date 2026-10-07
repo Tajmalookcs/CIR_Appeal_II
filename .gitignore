@@ -1,0 +1,56 @@
+# ============================================================
+#  CIR (Appeals-II) - files that must NEVER go to GitHub
+# ============================================================
+
+# --- Databases: none, in any form ---------------------------
+# Live DB, SQLite WAL/shared-memory/journal side files, and
+# copies such as "db.sqlite3.before-officer-split-...".
+*.sqlite3
+*.sqlite3*
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*-wal
+*-shm
+*-journal
+*.sql
+*.dump
+*.bak
+backups/
+
+# --- Secrets ------------------------------------------------
+secret_key.txt
+token.txt
+*token*.txt
+# The updater holds the GitHub token, so it stays on each PC only.
+Update from GitHub.bat
+# Version stamp written by the updater on each PC.
+.deployed_version
+.env
+.env.*
+
+# --- Office data (Excel registers, Word formats, scans) -----
+media/
+
+# --- Logs ---------------------------------------------------
+logs/
+*.log
+
+# --- Python / generated -------------------------------------
+venv/
+.venv/
+__pycache__/
+*.pyc
+staticfiles/
+
+# --- Editor / tool settings ---------------------------------
+.claude/
+.qodo/
+.vscode/
+.idea/
+
+# --- Windows clutter ----------------------------------------
+Thumbs.db
+desktop.ini
+~$*

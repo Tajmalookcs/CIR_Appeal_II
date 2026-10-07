@@ -1,0 +1,342 @@
+{% load humanize %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MPR {{ cfg.label }} &mdash; {{ period|date:"F Y" }}</title>
+    <style>
+        @page { size: A4 portrait; margin: 10mm 8mm; }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Times New Roman", Georgia, serif;
+            font-size: 11px;
+            color: #000;
+            background: #eee;
+            margin: 0;
+            padding: 16px;
+        }
+
+        /* A4 is 210mm x 297mm. The whole page is drawn on screen; when printing
+           @page supplies the margin instead, so the sheet loses its own. */
+        .sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #fff;
+            padding: 10mm 8mm;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+        }
+
+        /* --- Head ---------------------------------------------------------- */
+        .doc-head { text-align: center; line-height: 1.35; margin-bottom: 3mm; }
+        .doc-head .l1,
+        .doc-head .l2 { font-weight: bold; font-size: 13px; text-transform: uppercase; }
+        .doc-head .l3 { font-weight: bold; font-size: 12px; }
+
+        /* --- Section headings and tables ----------------------------------- */
+        h2 {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 3mm 0 1mm;
+        }
+        h2 small { font-weight: normal; text-transform: none; font-size: 11px; }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td {
+            border: 1px solid #000;
+            padding: 1.2mm 1mm;
+            vertical-align: middle;
+            text-align: center;
+            word-wrap: break-word;
+        }
+        th { font-weight: bold; background: #f2f2f2; }
+        td.val { height: 7mm; }
+        td.left { text-align: left; padding-left: 2mm; }
+
+        /* A figure the register worked out, as against a box left for the pen. */
+        .auto { font-weight: bold; }
+
+        /* --- Signature ----------------------------------------------------- */
+        .sign { margin-top: 14mm; text-align: right; line-height: 1.5; }
+        .sign .rule {
+            display: inline-block;
+            width: 70mm;
+            border-top: 1px solid #000;
+            margin-bottom: 1mm;
+        }
+
+        .note { margin-top: 4mm; font-size: 10px; font-style: italic; }
+
+        /* --- Screen-only toolbar ------------------------------------------- */
+        .toolbar {
+            width: 210mm;
+            margin: 0 auto 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-size: 13px;
+        }
+        .toolbar a, .toolbar button {
+            font: inherit;
+            padding: 6px 12px;
+            border: 1px solid #1e6b46;
+            background: #1e6b46;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .toolbar a.ghost { background: #fff; color: #1e6b46; }
+        .toolbar input[type="month"] {
+            font: inherit;
+            padding: 5px 8px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+        }
+        .toolbar .spacer { flex: 1; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .sheet { width: auto; min-height: 0; box-shadow: none; padding: 0; margin: 0; }
+            .toolbar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<form class="toolbar" method="get">
+    <label for="month">Month</label>
+    <input type="month" id="month" name="month" value="{{ month_value }}">
+    {% if figures %}<input type="hidden" name="fill" value="1">{% endif %}
+    <button type="submit">Show</button>
+    {% if figures %}
+        <a class="ghost" href="?month={{ month_value }}">Blank proforma</a>
+    {% else %}
+        <a class="ghost" href="?month={{ month_value }}&amp;fill=1">Fill from register</a>
+    {% endif %}
+    <a class="ghost" href="{% url 'appeals:mpr_letter' %}?month={{ month_value }}">Covering letter</a>
+    {% if register == "income" %}
+        <a class="ghost" href="{% url 'appeals:sales_tax_mpr' %}?month={{ month_value }}">Sales Tax MPR</a>
+    {% else %}
+        <a class="ghost" href="{% url 'appeals:income_tax_mpr' %}?month={{ month_value }}">Income Tax MPR</a>
+    {% endif %}
+    <span class="spacer"></span>
+    <button type="button" onclick="window.print()">Print</button>
+</form>
+
+<div class="sheet">
+
+    <div class="doc-head">
+        <div class="l1">Monthly Performance Report for the month of {{ period|date:"F-Y" }}</div>
+        <div class="l2">Commissioner Inland Revenue Appeals-II, Faisalabad.</div>
+        <div class="l3">({{ cfg.label|upper }})</div>
+    </div>
+
+    <h2>Particulars of Reporting Officer</h2>
+    <table>
+        <tr>
+            <th style="width:12%;">Code</th>
+            <th style="width:22%;">Name of CIR</th>
+            <th style="width:22%;">Telephone/Mobile</th>
+            <th style="width:26%;">Email address</th>
+            <th style="width:18%;">City</th>
+        </tr>
+        <tr>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val"></td>
+        </tr>
+    </table>
+
+    <h2>Appeals for Disposal</h2>
+    <table>
+        <tr>
+            <th rowspan="2" style="width:10%;">Opening Balance</th>
+            <th colspan="3">Transfer</th>
+            <th rowspan="2" style="width:10%;">Withdrawn</th>
+            <th rowspan="2" style="width:10%;">Remand Back</th>
+            <th rowspan="2" style="width:10%;">Fresh filing</th>
+            <th rowspan="2" style="width:16%;">Revenue involved in fresh filing (M)</th>
+            <th rowspan="2" style="width:14%;">Available for disposal</th>
+        </tr>
+        <tr>
+            <th style="width:8%;">In</th>
+            <th style="width:8%;">Out</th>
+            <th style="width:8%;">Net</th>
+        </tr>
+        <tr>
+            <td class="val auto">{% if figures %}{{ figures.opening_balance }}{% endif %}</td>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val"></td>
+            <td class="val auto">{% if figures %}{{ figures.fresh_filing }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.fresh_revenue }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.available }}{% endif %}</td>
+        </tr>
+    </table>
+
+    <table style="margin-top:-1px;">
+        <tr>
+            <th colspan="3">No. of Decided/Disposed of Appeals</th>
+            <th colspan="2">Revenue Involved</th>
+            <th rowspan="2" style="width:14%;">Balance Pendency</th>
+            <th rowspan="2" style="width:16%;">Revenue involved (M)</th>
+        </tr>
+        <tr>
+            <th style="width:14%;">During the month*</th>
+            <th style="width:14%;">Upto preceding month</th>
+            <th style="width:14%;">Upto the Month</th>
+            <th style="width:14%;">During the month (M)</th>
+            <th style="width:14%;">Upto the Month (M)</th>
+        </tr>
+        <tr>
+            <td class="val auto">{% if figures %}{{ figures.decided_month }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.decided_upto_preceding }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.decided_upto_month }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.decided_revenue_month }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.decided_revenue_upto }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.balance_pendency }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.pendency_revenue }}{% endif %}</td>
+        </tr>
+    </table>
+
+    <table style="margin-top:-1px;">
+        <tr>
+            <th colspan="2">Withdrawn</th>
+            <th colspan="2">Revenue (M)</th>
+            <th colspan="2">Stay of proceedings as per ADRC</th>
+            <th colspan="2">Revenue (M)</th>
+        </tr>
+        <tr>
+            <th style="width:12%;">During the month</th>
+            <th style="width:13%;">Upto the month</th>
+            <th style="width:12%;">During the month</th>
+            <th style="width:13%;">Upto the Month</th>
+            <th style="width:12%;">During the month</th>
+            <th style="width:13%;">Upto the Month</th>
+            <th style="width:12%;">During the month</th>
+            <th style="width:13%;">Upto the Month</th>
+        </tr>
+        <tr>
+            <td class="val"></td><td class="val"></td>
+            <td class="val"></td><td class="val"></td>
+            <td class="val"></td><td class="val"></td>
+            <td class="val"></td><td class="val"></td>
+        </tr>
+    </table>
+
+    <h2>Age wise break up of appeals decided/disposed of during the month</h2>
+    {% include "appeals/_mpr_ages.html" with rows=figures.decided_ages %}
+
+    <h2>Aging composition of balance pendency
+        <small>(Please write here figure of balance pendency)</small></h2>
+    {% include "appeals/_mpr_ages.html" with rows=figures.pendency_ages %}
+
+    <h2>Analysis of appeals decided/disposed of
+        <small>(Please write here same figure as stated above)</small></h2>
+    <table>
+        <tr>
+            <th rowspan="2" style="width:12%;"></th>
+            <th rowspan="2" style="width:9%;">Total No. of appeals</th>
+            <th rowspan="2" style="width:11%;">Revenue Involved (M)</th>
+            {% for label in decision_labels %}
+            <th colspan="2">{{ label }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for label in decision_labels %}
+            <th>No of appeals</th>
+            <th>Revenue Involved</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td class="left">For the month</td>
+            <td class="val auto">{% if figures %}{{ figures.analysis_total_month }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.analysis_revenue_month }}{% endif %}</td>
+            {% for row in figures.analysis %}
+            <td class="val auto">{{ row.month_cases }}</td>
+            <td class="val auto">{{ row.month_revenue }}</td>
+            {% empty %}
+            {% for label in decision_labels %}<td class="val"></td><td class="val"></td>{% endfor %}
+            {% endfor %}
+        </tr>
+        <tr>
+            <td class="left">Upto month</td>
+            <td class="val auto">{% if figures %}{{ figures.analysis_total_fy }}{% endif %}</td>
+            <td class="val auto">{% if figures %}{{ figures.analysis_revenue_fy }}{% endif %}</td>
+            {% for row in figures.analysis %}
+            <td class="val auto">{{ row.fy_cases }}</td>
+            <td class="val auto">{{ row.fy_revenue }}</td>
+            {% empty %}
+            {% for label in decision_labels %}<td class="val"></td><td class="val"></td>{% endfor %}
+            {% endfor %}
+        </tr>
+    </table>
+
+    <h2>Disposal of stay applications</h2>
+    <table>
+        <tr>
+            <th colspan="2">Opening Balance of stay applications</th>
+            <th colspan="2">New stay application filed in the Month</th>
+            <th colspan="2">No. of applications decided during the Month</th>
+            <th colspan="2">Stay applications pending for more than 10 days</th>
+            <th colspan="2">Closing balance (end of month)</th>
+        </tr>
+        <tr>
+            {% for pair in "12345" %}
+            <th style="width:9%;">No of stay application</th>
+            <th style="width:11%;">Revenue Involved (M)</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for cell in "1234567890" %}<td class="val"></td>{% endfor %}
+        </tr>
+    </table>
+
+    <h2>Disposal of cases on directions of superior courts</h2>
+    <table>
+        <tr>
+            <th colspan="2">Opening balance of cases remanded by Superior Courts</th>
+            <th colspan="2">New cases referred/remanded during the month</th>
+            <th colspan="2">Cases decided during the month</th>
+            <th colspan="2">Closing balance</th>
+        </tr>
+        <tr>
+            {% for pair in "1234" %}
+            <th style="width:11%;">No of appeals</th>
+            <th style="width:14%;">Revenue Involved (M)</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for cell in "12345678" %}<td class="val"></td>{% endfor %}
+        </tr>
+    </table>
+
+    <div class="sign">
+        <span class="rule"></span><br>
+        <strong>Commissioner Inland Revenue (Appeals-II)</strong><br>
+        Faisalabad
+    </div>
+
+    {% if figures %}
+    <div class="note">
+        Figures in bold are taken from the {{ cfg.label }} register for
+        {{ period|date:"F Y" }}. Transfers, withdrawals, remand backs, ADRC stays,
+        stay applications and superior court cases are not held in the register,
+        so those boxes are left blank to be entered by hand.
+    </div>
+    {% endif %}
+
+</div>
+
+{% if auto_print %}<script>window.addEventListener("load", function () { window.print(); });</script>{% endif %}
+</body>
+</html>

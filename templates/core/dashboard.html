@@ -1,0 +1,220 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Position of appeals as at {{ today|date:"d F Y" }}</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        {% if user.can_add %}
+        <a href="{% url 'appeals:sales_tax_create' %}" class="btn btn-fbr btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> New Sales Tax Appeal
+        </a>
+        <a href="{% url 'appeals:income_tax_create' %}" class="btn btn-fbr btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> New Income Tax Appeal
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Headline figures -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat">
+            <div class="stat-label">Total Appeals</div>
+            <div class="stat-value">{{ grand_total|intcomma }}</div>
+            <div class="stat-note">Both registers combined</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat is-gold">
+            <div class="stat-label">Pending Decision</div>
+            <div class="stat-value">{{ grand_pending|intcomma }}</div>
+            <div class="stat-note">Awaiting Order-In-Appeal</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat is-warn">
+            <div class="stat-label">Expiring in 30 Days</div>
+            <div class="stat-value">{{ grand_due_soon|intcomma }}</div>
+            <div class="stat-note">180-day limit approaching</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat is-danger">
+            <div class="stat-label">Time-Barred</div>
+            <div class="stat-value">{{ grand_overdue|intcomma }}</div>
+            <div class="stat-note">Past the 180-day limit</div>
+        </div>
+    </div>
+</div>
+
+<!-- Register breakdown -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head">
+                <span><i class="bi bi-receipt me-1"></i> Sales Tax Appeals</span>
+                <a href="{% url 'appeals:sales_tax_list' %}" class="btn btn-fbr-outline btn-sm py-0 px-2">
+                    Open Register <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="panel-body">
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-4">
+                        <div class="stat-value" style="font-size:22px;">{{ sales.total|intcomma }}</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-value" style="font-size:22px;color:var(--warn);">{{ sales.pending|intcomma }}</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-value" style="font-size:22px;color:var(--ok);">{{ sales.decided|intcomma }}</div>
+                        <div class="stat-label">Decided</div>
+                    </div>
+                </div>
+                <table class="table table-sm mb-0" style="font-size:13px;">
+                    <tr>
+                        <td>Sales tax involved (all)</td>
+                        <td class="num fw-semibold">Rs. {{ sales.amount|floatformat:0|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td>Sales tax involved (pending)</td>
+                        <td class="num fw-semibold">Rs. {{ sales.pending_amount|floatformat:0|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td>Past 120 days, within 180</td>
+                        <td class="num"><span class="pill pill-warn">{{ sales.overdue_120 }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Time-barred (past 180 days)</td>
+                        <td class="num"><span class="pill pill-danger">{{ sales.overdue_180 }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head">
+                <span><i class="bi bi-cash-coin me-1"></i> Income Tax Appeals</span>
+                <a href="{% url 'appeals:income_tax_list' %}" class="btn btn-fbr-outline btn-sm py-0 px-2">
+                    Open Register <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="panel-body">
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-4">
+                        <div class="stat-value" style="font-size:22px;">{{ income.total|intcomma }}</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-value" style="font-size:22px;color:var(--warn);">{{ income.pending|intcomma }}</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-value" style="font-size:22px;color:var(--ok);">{{ income.decided|intcomma }}</div>
+                        <div class="stat-label">Decided</div>
+                    </div>
+                </div>
+                <table class="table table-sm mb-0" style="font-size:13px;">
+                    <tr>
+                        <td>Revenue involved (all)</td>
+                        <td class="num fw-semibold">Rs. {{ income.amount|floatformat:0|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td>Revenue involved (pending)</td>
+                        <td class="num fw-semibold">Rs. {{ income.pending_amount|floatformat:0|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <td>Past 120 days, within 180</td>
+                        <td class="num"><span class="pill pill-warn">{{ income.overdue_120 }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Time-barred (past 180 days)</td>
+                        <td class="num"><span class="pill pill-danger">{{ income.overdue_180 }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Zone-wise -->
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head"><span><i class="bi bi-diagram-3 me-1"></i> Zone-wise Position</span></div>
+            <div class="panel-body p-0">
+                {% if zone_rows %}
+                <table class="table table-register table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Zone</th>
+                            <th class="num">Sales Tax</th>
+                            <th class="num">Income Tax</th>
+                            <th class="num">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in zone_rows %}
+                        <tr>
+                            <td class="fw-semibold">{{ row.zone.name }}</td>
+                            <td class="num">{{ row.sales }}</td>
+                            <td class="num">{{ row.income }}</td>
+                            <td class="num fw-bold">{{ row.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0" style="font-size:13px;">
+                    No appeals recorded against any zone yet.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent activity -->
+    {% if user.can_view_logs %}
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <div class="panel-head">
+                <span><i class="bi bi-clock-history me-1"></i> Recent Activity</span>
+                <a href="{% url 'core:audit_log' %}" class="btn btn-fbr-outline btn-sm py-0 px-2">
+                    Full Log <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="panel-body p-0">
+                {% if recent_activity %}
+                <table class="table table-register table-hover mb-0">
+                    <thead>
+                        <tr><th>When</th><th>User</th><th>Action</th><th>Record</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for log in recent_activity %}
+                        <tr>
+                            <td class="nowrap" style="font-size:12px;">{{ log.timestamp|date:"d-m-Y H:i" }}</td>
+                            <td>{{ log.actor }}</td>
+                            <td><span class="pill pill-info">{{ log.get_action_display }}</span></td>
+                            <td class="text-truncate" style="max-width:180px;">{{ log.object_repr|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0" style="font-size:13px;">No activity recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

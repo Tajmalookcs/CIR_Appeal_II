@@ -1,0 +1,314 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}{{ cfg.label }} Appeals{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Sortable register headings. The arrow sits on the same line as the label
+       so a heading never grows taller than it already was. */
+    .sort-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .sort-link:hover { color: inherit; text-decoration: underline; }
+    .sort-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+    .num .sort-link { justify-content: flex-end; }
+    .sort-icon { font-size: 11px; line-height: 1; flex: none; }
+    /* The idle arrows stay faint until the heading is hovered, so the active
+       column is the one that reads as sorted. */
+    .sort-icon-idle { opacity: .28; }
+    .sort-link:hover .sort-icon-idle { opacity: .7; }
+    .sort-active .sort-icon { opacity: 1; }
+    @media print { .sort-icon { display: none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">{{ cfg.label }} Appeals Register</h1>
+        <p class="page-subtitle">
+            {{ total_count|intcomma }} record{{ total_count|pluralize }} &middot;
+            {{ cfg.amount_label }}: Rs. {{ total_amount|floatformat:0|intcomma }}
+        </p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="{% url cfg.export_url %}{% if querystring %}?{{ querystring }}{% endif %}"
+           class="btn btn-fbr-outline btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+        </a>
+        {% if user.can_add %}
+        <a href="{% url cfg.create_url %}" class="btn btn-fbr btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Register Appeal
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="panel mb-3 no-print">
+    <div class="panel-head"><span><i class="bi bi-funnel me-1"></i> Search &amp; Filter</span></div>
+    <div class="panel-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-md-4 col-lg-3">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm"
+                       placeholder="Appeal No., NTN, appellant...">
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Zone</label>
+                <select name="zone" class="form-select form-select-sm" id="filter_zone">
+                    <option value="">All Zones</option>
+                    {% for z in zones %}
+                    <option value="{{ z.pk }}" {% if filters.zone == z.pk|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Unit</label>
+                <select name="unit" class="form-select form-select-sm" id="filter_unit">
+                    <option value="">All Units</option>
+                    {% for u in units %}
+                    <option value="{{ u.pk }}" data-zone="{{ u.zone_id }}"
+                            {% if filters.unit == u.pk|stringformat:"s" %}selected{% endif %}>{{ u }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Decision</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    {% for value, label in decision_choices %}
+                    <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Pendency</label>
+                <select name="pendency" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="pending" {% if filters.pendency == "pending" %}selected{% endif %}>Pending</option>
+                    <option value="decided" {% if filters.pendency == "decided" %}selected{% endif %}>Decided</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Decision Limit</label>
+                <select name="expiry" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="due_soon" {% if filters.expiry == "due_soon" %}selected{% endif %}>Due within 30 days</option>
+                    <option value="overdue_120" {% if filters.expiry == "overdue_120" %}selected{% endif %}>Past 120 &mdash; approval needed</option>
+                    <option value="overdue_180" {% if filters.expiry == "overdue_180" %}selected{% endif %}>Past 180 days</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Filing (30 Days)</label>
+                <select name="filing" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="in_time" {% if filters.filing == "in_time" %}selected{% endif %}>Filed within time</option>
+                    <option value="late" {% if filters.filing == "late" %}selected{% endif %}>Filed late</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Service</label>
+                <select name="service" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    {% for value, label in service_choices %}
+                    <option value="{{ value }}" {% if filters.service == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Instituted From</label>
+                <input type="date" name="from" value="{{ filters.from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">Instituted To</label>
+                <input type="date" name="to" value="{{ filters.to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-12 col-lg-3 d-flex gap-2">
+                <button type="submit" class="btn btn-fbr btn-sm flex-grow-1">
+                    <i class="bi bi-search me-1"></i> Apply
+                </button>
+                <a href="{% url cfg.list_url %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Register -->
+<div class="panel">
+    <div class="panel-head">
+        <span><i class="bi bi-table me-1"></i> Register</span>
+        <span style="font-size:12px;font-weight:400;">
+            <span class="pill pill-warn">Past 120 days &mdash; approval needed</span>
+            <span class="pill pill-danger ms-1">Past 180 days</span>
+        </span>
+    </div>
+    <div class="table-responsive" style="max-height:65vh;">
+        <table class="table table-register table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.appeal_no label="Appeal No." sub="" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.instituted label="Instituted" sub="" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.appellant label="Appellant" sub="" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.ntn label="NTN" sub="" %}</th>
+                    {% if register == "sales" %}<th>{% include "appeals/_sort_th.html" with col=sort_cols.tax label="Tax Period" %}</th>{% else %}<th>{% include "appeals/_sort_th.html" with col=sort_cols.tax label="Tax Year" %}</th>{% endif %}
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.zone label="Zone / Unit" sub="" %}</th>
+                    <th class="num">{% include "appeals/_sort_th.html" with col=sort_cols.amount label=cfg.amount_label %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.filing label="Filing" sub="30 days" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.decide_by label="Decide By" sub="120 days" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.extension label="Extension" sub="180 days" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.decision label="Decision" sub="" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.service label="Service" sub="" %}</th>
+                    <th class="no-print"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in appeals %}
+                <tr class="{% if a.expiry_level == 'overdue_180' %}row-overdue-180{% elif a.expiry_level == 'overdue_120' %}row-overdue-120{% endif %}">
+                    <td class="nowrap fw-semibold">
+                        <a href="{% url cfg.detail_url a.pk %}" style="color:var(--fbr-green-dark);">{{ a.appeal_no }}</a>
+                    </td>
+                    <td class="nowrap">{{ a.date_of_institution|date:"d-m-Y" }}</td>
+                    <td style="min-width:170px;">{{ a.appellant_name }}</td>
+                    <td class="nowrap">{{ a.ntn|default:"—" }}</td>
+                    {% if register == "sales" %}
+                    <td class="nowrap">{{ a.tax_period|default:"—" }}</td>
+                    {% else %}
+                    <td class="nowrap">{{ a.tax_year|default:"—" }}</td>
+                    {% endif %}
+                    <td class="nowrap" style="font-size:12px;">
+                        {% if a.zone %}{{ a.zone.name }}{% else %}—{% endif %}
+                        {% if a.unit %}<br><span class="text-muted">{{ a.unit.name }}</span>{% endif %}
+                    </td>
+                    <td class="num">
+                        {% if register == "sales" %}{{ a.sales_tax_involved|floatformat:0|intcomma }}
+                        {% else %}{{ a.revenue_involved|floatformat:0|intcomma }}{% endif %}
+                    </td>
+                    <td class="nowrap">
+                        {% if a.filing_dates_inconsistent %}
+                            <span class="pill pill-warn" title="The order date recorded is later than the filing date">
+                                <i class="bi bi-exclamation-triangle"></i> Check dates
+                            </span>
+                        {% elif a.filed_late %}
+                            <span class="pill pill-danger">{{ a.filing_status }}</span>
+                        {% elif a.filing_status == "-" %}
+                            <span class="pill pill-muted">&mdash;</span>
+                        {% else %}
+                            <span class="pill pill-ok">{{ a.filing_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="nowrap">
+                        {{ a.first_expiry_120|date:"d-m-Y"|default:"—" }}
+                        <br>
+                        {% if a.is_decided %}
+                            <small class="text-muted">decided</small>
+                        {% elif a.exceeded_120 %}
+                            <small style="color:var(--warn);font-weight:600;">{{ a.status_120 }}</small>
+                        {% else %}
+                            <small class="text-muted">{{ a.status_120 }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="nowrap">
+                        {{ a.second_expiry_180|date:"d-m-Y"|default:"—" }}
+                        <br>
+                        {% if a.is_decided %}
+                            <small class="text-muted">decided</small>
+                        {% elif a.exceeded_180 %}
+                            <small style="color:var(--danger);font-weight:600;">{{ a.status_180 }}</small>
+                        {% elif a.needs_special_approval %}
+                            <small style="color:var(--warn);font-weight:600;">approval needed</small>
+                        {% else %}
+                            <small class="text-muted">{{ a.status_180 }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="nowrap">
+                        {% if a.is_decided %}
+                            <span class="pill pill-info">{{ a.get_decision_status_display }}</span>
+                        {% else %}
+                            <span class="pill pill-muted">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="nowrap">
+                        {% if a.service_status == "delivered" %}<span class="pill pill-ok">Delivered</span>
+                        {% elif a.service_status == "returned" %}<span class="pill pill-danger">Returned</span>
+                        {% else %}<span class="pill pill-muted">Pending</span>{% endif %}
+                    </td>
+                    <td class="nowrap no-print">
+                        <a href="{% url cfg.detail_url a.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                           title="View"><i class="bi bi-eye"></i></a>
+                        {% if user.can_edit %}
+                        <a href="{% url cfg.update_url a.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                           title="Edit"><i class="bi bi-pencil"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="13" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size:28px;opacity:.4;"></i>
+                        <p class="mb-0 mt-2" style="font-size:13px;">No appeals match the current filters.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="panel-body border-top d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
+        <span style="font-size:12.5px;" class="text-muted">
+            Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ total_count|intcomma }}
+        </span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Keep the Unit filter limited to the selected Zone.
+(function () {
+    const zoneSel = document.getElementById('filter_zone');
+    const unitSel = document.getElementById('filter_unit');
+    if (!zoneSel || !unitSel) return;
+
+    const allOptions = Array.from(unitSel.options).map(o => o.cloneNode(true));
+
+    function sync() {
+        const zone = zoneSel.value;
+        const current = unitSel.value;
+        unitSel.innerHTML = '';
+        allOptions.forEach(function (opt) {
+            if (!opt.value || !zone || opt.dataset.zone === zone) {
+                unitSel.appendChild(opt.cloneNode(true));
+            }
+        });
+        unitSel.value = Array.from(unitSel.options).some(o => o.value === current) ? current : '';
+    }
+
+    zoneSel.addEventListener('change', sync);
+    sync();
+})();
+</script>
+{% endblock %}

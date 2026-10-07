@@ -1,0 +1,212 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MPR Covering Letter &mdash; {{ period|date:"F Y" }}</title>
+    <style>
+        @page { size: A4 portrait; margin: 16mm 18mm; }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Times New Roman", Georgia, serif;
+            font-size: 15.5px;
+            line-height: 1.6;
+            color: #000;
+            background: #eee;
+            margin: 0;
+            padding: 18px;
+        }
+
+        .sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #fff;
+            padding: 16mm 18mm;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+        }
+
+        /* --- Letterhead ---------------------------------------------------- */
+        .letterhead { text-align: center; }
+        .letterhead .crests {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6mm;
+            margin-bottom: 4mm;
+        }
+        .letterhead .crests .slot {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .letterhead .crests .slot:first-child { justify-content: flex-start; }
+        .letterhead .crests .slot:last-child { justify-content: flex-end; }
+        .letterhead .crests img { width: auto; display: block; }
+        .letterhead .crest-fbr { height: 20mm; }
+        .letterhead .crest-gop { height: 27mm; }
+        .letterhead .crest-irs { height: 17mm; }
+        .letterhead-img { width: 100%; height: auto; display: block; margin-bottom: 3mm; }
+
+        .gov { font-weight: bold; font-size: 17px; }
+        .office { font-weight: bold; font-size: 16px; text-transform: uppercase; }
+        .address { font-weight: bold; font-size: 16px; text-transform: uppercase; text-decoration: underline; }
+        .stars { letter-spacing: 2px; margin: 1mm 0 2mm; }
+
+        .refs {
+            display: flex;
+            justify-content: space-between;
+            gap: 10mm;
+            font-size: 14.5px;
+            line-height: 1.5;
+        }
+        .refs .right { text-align: left; }
+        .rule-double {
+            border-top: 3px double #000;
+            margin: 2mm 0 8mm;
+        }
+
+        .to { margin-bottom: 6mm; }
+        .to .addressee { margin-left: 18mm; }
+        .to .addressee .city { font-weight: bold; text-decoration: underline; }
+
+        .subject { display: flex; gap: 6mm; margin-bottom: 6mm; }
+        .subject .label { font-weight: bold; white-space: nowrap; }
+        .subject .text { font-weight: bold; text-decoration: underline; text-transform: uppercase; }
+
+        p { margin: 0 0 5mm; text-align: justify; }
+        .para { display: flex; gap: 4mm; }
+        .para .n { width: 8mm; flex: none; }
+
+        .sign { margin-top: 20mm; text-align: center; margin-left: auto; width: 80mm; }
+        .sign .rule { display: block; height: 14mm; }
+        .sign .name { font-weight: bold; }
+
+        /* --- Screen-only toolbar ------------------------------------------- */
+        .toolbar {
+            width: 210mm;
+            margin: 0 auto 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-size: 13px;
+        }
+        .toolbar a, .toolbar button {
+            font: inherit;
+            padding: 6px 12px;
+            border: 1px solid #1e6b46;
+            background: #1e6b46;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .toolbar a.ghost { background: #fff; color: #1e6b46; }
+        .toolbar input[type="month"] {
+            font: inherit;
+            padding: 5px 8px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+        }
+        .toolbar .spacer { flex: 1; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .sheet { width: auto; min-height: 0; box-shadow: none; padding: 0; margin: 0; }
+            .toolbar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<form class="toolbar" method="get">
+    <label for="month">Month</label>
+    <input type="month" id="month" name="month" value="{{ month_value }}">
+    <button type="submit">Show</button>
+    <a class="ghost" href="{% url 'appeals:income_tax_mpr' %}?month={{ month_value }}">Income Tax MPR</a>
+    <a class="ghost" href="{% url 'appeals:sales_tax_mpr' %}?month={{ month_value }}">Sales Tax MPR</a>
+    <span class="spacer"></span>
+    <button type="button" onclick="window.print()">Print</button>
+</form>
+
+<div class="sheet">
+
+    <div class="letterhead">
+        {% if OFFICE_LETTERHEAD %}
+        <img class="letterhead-img" src="{% static OFFICE_LETTERHEAD %}" alt="">
+        {% else %}
+        <div class="crests">
+            <div class="slot">
+                {% if CREST_FBR %}<img class="crest-fbr" src="{% static CREST_FBR %}" alt="">{% endif %}
+            </div>
+            <div class="slot">
+                {% if CREST_GOP %}<img class="crest-gop" src="{% static CREST_GOP %}" alt="">{% endif %}
+            </div>
+            <div class="slot">
+                {% if CREST_IRS %}<img class="crest-irs" src="{% static CREST_IRS %}" alt="">{% endif %}
+            </div>
+        </div>
+        <div class="gov">GOVERNMENT OF PAKISTAN</div>
+        <div class="office">Office of the Commissioner Inland Revenue (Appeals-II),</div>
+        <div class="address">Regional Tax Office Building, Jail Road, Faisalabad</div>
+        <div class="stars">****************</div>
+        {% endif %}
+    </div>
+
+    <div class="refs">
+        <div class="left">
+            Tel:041-9210322, Fax: 041-9210323<br>
+            E-mail:cira.iifsd@gmail.com
+        </div>
+        <div class="right">
+            C.No. 12/MPR (I.R)/CIR (A-II)/Fsd/{{ fy_label }}/<br>
+            Dated:
+        </div>
+    </div>
+    <div class="rule-double"></div>
+
+    <div class="to">
+        To<br>
+        <div class="addressee">
+            The Secretary (Appeals),<br>
+            Federal Board of Revenue (HQ)<br>
+            Constitution Avenue,<br>
+            <span class="city">Islamabad.</span>
+        </div>
+    </div>
+
+    <div class="subject">
+        <span class="label">SUBJECT:</span>
+        <span class="text">Pendency and Analysis Report (Appeals-II) for the month of
+            {{ period|date:"F - Y" }} &ndash; Submission of-</span>
+    </div>
+
+    <div class="para">
+        <span class="n"></span>
+        <p>Kindly refer to the subject cited above.</p>
+    </div>
+
+    <div class="para">
+        <span class="n">2.</span>
+        <p>The requisite information regarding Direct Taxes (Income Tax) and Indirect
+        Taxes (Sales Tax and Federal Excise) for the month of {{ period|date:"F, Y" }}
+        in respect of this office is enclosed as per prescribed proforma.</p>
+    </div>
+
+    <p>Encl: (As above)</p>
+
+    <div class="sign">
+        <span class="rule"></span>
+        <div class="name">Commissioner Inland Revenue (Appeals-II)</div>
+        <div>Faisalabad</div>
+    </div>
+
+</div>
+
+{% if auto_print %}<script>window.addEventListener("load", function () { window.print(); });</script>{% endif %}
+</body>
+</html>
