@@ -49,7 +49,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "10.10.14.230",     # host PC, office LAN
     "192.168.137.1",    # host PC, mobile hotspot
-    "10.10.12.99",      # office data server (planned)
+    "10.10.12.191",     # host PC, office LAN
 ]
 
 # Extra hosts can be added at run time without editing this file:
