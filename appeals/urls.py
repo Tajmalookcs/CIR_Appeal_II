@@ -19,6 +19,8 @@ urlpatterns = [
          name="sales_tax_receiving_slip"),
     path("sales-tax/<int:pk>/hearing-notice/", views.sales_tax_hearing_notice,
          name="sales_tax_hearing_notice"),
+    path("sales-tax/<int:pk>/hearing-date/", views.sales_tax_hearing_date,
+         name="sales_tax_hearing_date"),
     path("sales-tax/<int:pk>/stay-call/", views.sales_tax_stay_call,
          name="sales_tax_stay_call"),
     path("sales-tax/<int:pk>/edit/", views.sales_tax_update, name="sales_tax_update"),

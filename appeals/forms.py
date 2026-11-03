@@ -90,6 +90,7 @@ class SalesTaxAppealForm(AppealFormBase):
             "issue_involved", "section",
             "oia_no", "oia_date", "decision_status",
             "courier_no", "courier_date", "service_status",
+            "hearing_date",
         ]
         widgets = {
             "serial_no": forms.NumberInput(attrs={**TEXT, "min": "1", "placeholder": "e.g. 12"}),
@@ -125,6 +126,7 @@ class SalesTaxAppealForm(AppealFormBase):
             "courier_no": forms.TextInput(attrs=TEXT),
             "courier_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
             "service_status": forms.Select(attrs=SELECT),
+            "hearing_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
         }
 
 
@@ -142,6 +144,7 @@ class IncomeTaxAppealForm(AppealFormBase):
             "ar_address", "ar_city",
             "appellate_order_date", "decision_status",
             "courier_no", "courier_date", "service_status",
+            "hearing_date",
         ]
         widgets = {
             "serial_no": forms.NumberInput(attrs={**TEXT, "min": "1", "placeholder": "e.g. 12"}),
@@ -176,4 +179,5 @@ class IncomeTaxAppealForm(AppealFormBase):
             "courier_no": forms.TextInput(attrs=TEXT),
             "courier_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
             "service_status": forms.Select(attrs=SELECT),
+            "hearing_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
         }

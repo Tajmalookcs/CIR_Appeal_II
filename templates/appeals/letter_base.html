@@ -251,8 +251,9 @@
 </div>
 
 <script>
-    // Toolbar inputs write into the span named by data-fill. Nothing is saved;
-    // dates are rendered the way the office writes them, dd.mm.yyyy.
+    // Toolbar inputs write into the span named by data-fill. Nothing is saved
+    // here (a letter may save a field itself - see the hearing notice's
+    // extra_js); dates are rendered the way the office writes them, dd.mm.yyyy.
     document.querySelectorAll("[data-fill]").forEach(function (input) {
         var target = document.getElementById(input.dataset.fill);
         if (!target) { return; }
@@ -267,6 +268,8 @@
         input.addEventListener("input", sync);
         sync();
     });
+
+{% block extra_js %}{% endblock %}
 
     if (new URLSearchParams(location.search).get("print") === "1") {
         window.addEventListener("load", () => window.print());

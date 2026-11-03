@@ -50,6 +50,20 @@ jacket, one layout per register, matching the office's existing printed covers.
 Opened from the **File Cover** button on the record page; standalone template, A4
 portrait, toolbar hidden when printing. `?print=1` opens the print dialog directly.
 
+## Hearing Date
+`BaseAppeal.hearing_date` (both registers, migration `0008_hearing_date`) holds the
+**latest** date fixed for hearing; re-fixing overwrites it, and the audit log keeps
+the earlier dates. Two ways in:
+- the **Hearing** section of the add/edit form;
+- the **Hearing Notice** (Sales Tax only): the date box opens on the saved date, and
+  picking a new date saves it at once via `sales_tax_hearing_date` (POST, JSON,
+  `can_edit_required`, audit-logged). A view-only user can still print the notice
+  but the date is not saved.
+
+Shown as the **last column** of both registers ("in N days" / "today"), sortable
+(`sort=hearing`, blanks last), filterable (`hearing=today|week|upcoming|past|none`),
+and the last column of both Excel exports.
+
 ## Limitation Rules
 **THREE SEPARATE CLOCKS. Never combine them** - this was got wrong once and corrected
 by the office.

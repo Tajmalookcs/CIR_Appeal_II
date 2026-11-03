@@ -116,6 +116,12 @@ class BaseAppeal(models.Model):
         default=ServiceStatus.PENDING,
     )
 
+    # Date fixed for the next hearing. Entered on the appeal form, and also
+    # saved when the clerk picks a date on the Hearing Notice. Holds the latest
+    # date only - a re-fixed hearing simply overwrites it (the audit log keeps
+    # the earlier dates).
+    hearing_date = models.DateField("Hearing Date", null=True, blank=True, db_index=True)
+
     # The foreign keys let us follow the account; the *_by_name snapshots record
     # who actually did the work. An account that is renamed or reassigned to a
     # new person must never reattribute an existing entry.
@@ -181,6 +187,13 @@ class BaseAppeal(models.Model):
             self.first_expiry_120 = None
             self.second_expiry_180 = None
         super().save(*args, **kwargs)
+
+    @property
+    def hearing_in_days(self):
+        """Days from today to the hearing: 0 today, negative once it has passed."""
+        if not self.hearing_date:
+            return None
+        return (self.hearing_date - timezone.localdate()).days
 
     @property
     def order_date(self):

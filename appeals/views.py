@@ -241,6 +241,7 @@ SORTABLE = {
     "extension": ["second_expiry_180"],
     "decision": ["decision_status"],
     "service": ["service_status"],
+    "hearing": ["hearing_date"],
 }
 
 DEFAULT_SORT = "appeal_no"
@@ -376,6 +377,18 @@ def apply_filters(request, cfg):
             second_expiry_180__lte=today + timedelta(days=30),
         )
 
+    hearing = request.GET.get("hearing", "").strip()
+    if hearing == "today":
+        qs = qs.filter(hearing_date=today)
+    elif hearing == "week":
+        qs = qs.filter(hearing_date__gte=today, hearing_date__lte=today + timedelta(days=7))
+    elif hearing == "upcoming":
+        qs = qs.filter(hearing_date__gte=today)
+    elif hearing == "past":
+        qs = qs.filter(hearing_date__lt=today)
+    elif hearing == "none":
+        qs = qs.filter(hearing_date__isnull=True)
+
     date_from = request.GET.get("from", "").strip()
     if date_from:
         qs = qs.filter(date_of_institution__gte=date_from)
@@ -427,6 +440,7 @@ def register_context(request, key):
         "units": Unit.objects.filter(is_active=True).select_related("zone"),
         "decision_choices": cfg["model"].Decision.choices,
         "service_choices": cfg["model"]._meta.get_field("service_status").choices,
+        "today": timezone.localdate(),
         "querystring": params.urlencode(),
         "sort_querystring": sort_params.urlencode(),
         "sort_key": sort_key,
@@ -441,6 +455,7 @@ def register_context(request, key):
             "pendency": request.GET.get("pendency", ""),
             "expiry": request.GET.get("expiry", ""),
             "filing": request.GET.get("filing", ""),
+            "hearing": request.GET.get("hearing", ""),
             "from": request.GET.get("from", ""),
             "to": request.GET.get("to", ""),
         },
@@ -650,6 +665,44 @@ def sales_tax_hearing_notice(request, pk):
         pk,
         extra=lambda appeal: {"subject": _hearing_notice_subject(appeal)},
     )
+
+
+@login_required
+@can_edit_required
+def sales_tax_hearing_date(request, pk):
+    """Save the date picked on the Hearing Notice to the record.
+
+    Called in the background by the notice page, so it answers in JSON. An
+    empty value clears the date. Logged like any other edit.
+    """
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST required."}, status=405)
+    cfg = REGISTERS["sales"]
+    appeal = get_object_or_404(cfg["model"], pk=pk)
+
+    raw = request.POST.get("hearing_date", "").strip()
+    try:
+        new_date = date.fromisoformat(raw) if raw else None
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Not a valid date."}, status=400)
+
+    if appeal.hearing_date != new_date:
+        before = snapshot(appeal)
+        appeal.hearing_date = new_date
+        appeal.updated_by = request.user
+        appeal.updated_by_name = _who(request.user)
+        appeal.save()
+        log_action(
+            request,
+            AuditLog.Action.UPDATE,
+            instance=appeal,
+            changes=diff(before, snapshot(appeal)),
+            model_name=cfg["model"]._meta.verbose_name.title(),
+        )
+    return JsonResponse({
+        "ok": True,
+        "hearing_date": new_date.isoformat() if new_date else "",
+    })
 
 
 @login_required
@@ -950,6 +1003,7 @@ SALES_COLUMNS = [
     ("Courier No.", lambda a: a.courier_no),
     ("Courier Date", lambda a: a.courier_date),
     ("Service Status", lambda a: a.get_service_status_display()),
+    ("Hearing Date", lambda a: a.hearing_date),
 ]
 
 INCOME_COLUMNS = [
@@ -986,6 +1040,7 @@ INCOME_COLUMNS = [
     ("Courier No.", lambda a: a.courier_no),
     ("Courier Date", lambda a: a.courier_date),
     ("Service Status", lambda a: a.get_service_status_display()),
+    ("Hearing Date", lambda a: a.hearing_date),
 ]
 
 

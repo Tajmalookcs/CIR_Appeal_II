@@ -126,6 +126,11 @@
         <div class="col-lg-6">
             <div class="panel h-100">
                 <div class="panel-body">
+                    <p class="fieldset-title">Hearing</p>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.hearing_date %}</div>
+                    </div>
+
                     <p class="fieldset-title">Order-In-Appeal (leave blank while pending)</p>
                     <div class="row g-3 mb-2">
                         {% if register == "sales" %}
