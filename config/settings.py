@@ -8,6 +8,7 @@ variable CIR_DEBUG=1 before starting the server.
 
 import os
 import secrets
+import socket
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,6 +58,17 @@ ALLOWED_HOSTS = [
 _extra_hosts = os.environ.get("CIR_ALLOWED_HOSTS", "")
 if _extra_hosts:
     ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(",") if h.strip()]
+
+# Also accept this PC's own network addresses, so the system answers over the
+# LAN on whichever machine it is installed on, even if its address changes,
+# without editing this file.
+try:
+    ALLOWED_HOSTS += [
+        ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
+        if ip not in ALLOWED_HOSTS
+    ]
+except OSError:
+    pass
 
 # Form posts are same-origin, but Django checks the Origin header explicitly.
 CSRF_TRUSTED_ORIGINS = [
