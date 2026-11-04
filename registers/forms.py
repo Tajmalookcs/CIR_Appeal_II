@@ -94,3 +94,37 @@ class CourtFormBase(forms.ModelForm):
 def court_form_for(model):
     return forms.modelform_factory(model, form=CourtFormBase,
                                    fields=COURT_FIELDS, widgets=COURT_WIDGETS)
+
+
+# ---------------------------------------------------------------------------
+# Rectification applications
+# ---------------------------------------------------------------------------
+RECT_FIELDS = ["application_date", "application_no", "request_by", "fixation_date",
+               "decision", "decision_date", "remarks"]
+RECT_WIDGETS = {
+    "application_date": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "application_no": forms.TextInput(attrs={"class": "form-control"}),
+    "request_by": forms.Select(attrs={"class": "form-select"}),
+    "fixation_date": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "decision": forms.Select(attrs={"class": "form-select"}),
+    "decision_date": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "remarks": forms.TextInput(attrs={"class": "form-control"}),
+}
+
+
+class RectFormBase(forms.ModelForm):
+    def clean(self):
+        data = super().clean()
+        applied = data.get("application_date")
+        for field in ("fixation_date", "decision_date"):
+            value = data.get(field)
+            if applied and value and value < applied:
+                self.add_error(field, "Cannot be before the date of the application.")
+        if data.get("decision_date") and data.get("decision") == "pending":
+            self.add_error("decision", "Choose the decision when a date of decision is given.")
+        return data
+
+
+def rect_form_for(model):
+    return forms.modelform_factory(model, form=RectFormBase,
+                                   fields=RECT_FIELDS, widgets=RECT_WIDGETS)

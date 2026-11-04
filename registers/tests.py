@@ -10,7 +10,8 @@ from core.models import Holiday, HolidayYear
 from core.workdays import Calendar, stay_dispose_by, stay_fixation_date
 
 from .models import (IncomeTaxCourtDirection, IncomeTaxEarlyHearing,
-                     IncomeTaxStayApplication, SalesTaxCourtDirection,
+                     IncomeTaxRectification, IncomeTaxStayApplication,
+                     SalesTaxCourtDirection, SalesTaxRectification,
                      SalesTaxStayApplication)
 
 
@@ -172,3 +173,49 @@ class EarlyAndCourtTests(TestCase):
         mk(appeal=self.it, date_of_receipt=date(2026, 10, 5), direction="c")                # new
         f = _mpr_court_figures(IncomeTaxAppeal, "revenue_involved", date(2026, 10, 1), date(2026, 11, 1))
         self.assertEqual([f[k]["count"] for k in ("opening", "new", "decided", "closing")], [2, 1, 1, 2])
+
+
+class RectificationTests(TestCase):
+    def setUp(self):
+        HolidayYear.objects.create(year=2026)
+        self.st = SalesTaxAppeal.objects.create(
+            serial_no=3, date_of_institution=date(2026, 8, 1), appellant_name="ST Rect",
+            sales_tax_involved=4_000_000)
+        self.it = IncomeTaxAppeal.objects.create(
+            serial_no=3, date_of_institution=date(2026, 8, 1), appellant_name="IT Rect",
+            revenue_involved=1_500_000)
+        self.clerk = User.objects.create_user("3310000000003", password="x", role=User.ROLE_DATA_ENTRY)
+        self.viewer = User.objects.create_user("3310000000002", password="x", role=User.ROLE_COMMISSIONER)
+
+    def test_add_and_register(self):
+        url = reverse("registers:entry_create", args=["sales", self.st.pk, "rect"])
+        data = {"application_date": "2026-11-02", "application_no": "R-12/2026",
+                "request_by": "suo_moto", "fixation_date": "2026-11-10", "decision": "pending"}
+        self.client.force_login(self.viewer)
+        self.assertEqual(self.client.post(url, data).status_code, 403)
+        self.client.force_login(self.clerk)
+        self.assertEqual(self.client.post(url, data).status_code, 302)
+        page = self.client.get(reverse("registers:rect_register", args=["sales"]))
+        cells = page.context["rows"][0]["cells"]
+        self.assertEqual(cells[5], "R-12/2026")
+        self.assertEqual(cells[7], "Suo moto")
+        self.assertEqual(cells[9], "Pending")
+        self.assertEqual(page.context["rule"], "(See Section 57)")
+        self.assertEqual(len(self.client.get(
+            reverse("registers:rect_register", args=["income"])).context["rows"]), 0)
+
+    def test_decision_filters_and_validation(self):
+        mk = IncomeTaxRectification.objects.create
+        mk(appeal=self.it, application_date=date(2026, 10, 1), request_by="taxpayer",
+           decision="partly_accepted", decision_date=date(2026, 10, 20))
+        mk(appeal=self.it, application_date=date(2026, 10, 5), request_by="department")
+        self.client.force_login(self.clerk)
+        base = reverse("registers:rect_register", args=["income"])
+        self.assertEqual(len(self.client.get(base + "?status=pending").context["rows"]), 1)
+        self.assertEqual(len(self.client.get(base + "?status=decided").context["rows"]), 1)
+        self.assertEqual(len(self.client.get(base + "?status=partly_accepted").context["rows"]), 1)
+        self.assertEqual(len(self.client.get(base + "?by=department").context["rows"]), 1)
+        r = self.client.post(reverse("registers:entry_create", args=["income", self.it.pk, "rect"]),
+                             {"application_date": "2026-11-02", "request_by": "taxpayer",
+                              "decision": "pending", "decision_date": "2026-11-05"})
+        self.assertIn("decision", r.context["form"].errors)

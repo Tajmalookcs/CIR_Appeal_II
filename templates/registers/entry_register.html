@@ -7,7 +7,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
     <div>
         <h1 class="page-title">{{ cfg.label }} &mdash; {{ title }}</h1>
-        <p class="page-subtitle">{% if form_no %}{{ form_no }} {% endif %}{{ rule }}, {{ cfg.law }} &middot; {{ rows|length }} entr{{ rows|length|pluralize:"y,ies" }}</p>
+        <p class="page-subtitle">{% if form_no %}{{ form_no }} {% endif %}{{ rule }}, {{ law|default:cfg.law }} &middot; {{ rows|length }} entr{{ rows|length|pluralize:"y,ies" }}</p>
     </div>
     <div class="d-flex gap-2 no-print">
         <a href="?{{ request.GET.urlencode }}&amp;export=xlsx" class="btn btn-outline-success btn-sm">
@@ -95,7 +95,7 @@
                     {% elif kind == "court" and forloop.counter0 == 6 and not value %}
                     <td class="nowrap">{% if e.is_overdue %}<span style="color:var(--danger);font-weight:600;">pending - past last date</span>{% else %}<span class="text-muted">pending</span>{% endif %}</td>
                     {% else %}
-                    <td class="{% if forloop.counter0 == 2 and kind == 'court' or forloop.counter0 == 3 and kind == 'early' %}{% else %}nowrap{% endif %}" {% if forloop.counter0 == 2 and kind == 'court' or forloop.counter0 == 3 and kind == 'early' %}style="min-width:170px;"{% endif %}>{{ value|cell }}</td>
+                    <td class="{% if forloop.counter0 == 2 and kind == 'court' or forloop.counter0 == 3 and kind != 'court' %}{% else %}nowrap{% endif %}" {% if forloop.counter0 == 2 and kind == 'court' or forloop.counter0 == 3 and kind != 'court' %}style="min-width:170px;"{% endif %}>{{ value|cell }}</td>
                     {% endif %}
                     {% endfor %}
                     <td class="nowrap no-print">

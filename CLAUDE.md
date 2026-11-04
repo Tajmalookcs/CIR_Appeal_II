@@ -105,6 +105,15 @@ Both are entered from the appeal page (panels "Early Hearing Requests" and "Cour
 Directions / Orders") through generic views `entry_create/update/delete` with
 `kind` = `early` | `court`; same roles and audit logging as stay applications.
 
+**Rectification Application Register** (office register, not an SRO form; requested
+04-11-2026, laid out like the Early Hearing Register) - `SalesTaxRectification` /
+`IncomeTaxRectification`: date, application no., request by (Department / Taxpayer /
+Suo moto), fixation date, decision (Pending / Accepted / Rejected / Partially accepted /
+Partially rejected / Others), optional date of decision, remarks. Heading "(See Section
+57) Sales Tax Act, 1990" / "(See Section 221) Income Tax Ordinance, 2001". Columns
+(1)-(13). `/registers/<tax>/rectifications/`; entered from the appeal page panel
+"Rectification Applications" (`kind` = `rect`). Not on the MPR.
+
 Status choices were NOT extended to the SRO wording (Varied / Altered / Set aside;
 Enhanced / Other) because that would change the MPR columns.
 

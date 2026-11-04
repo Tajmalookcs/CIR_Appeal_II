@@ -293,3 +293,67 @@ class IncomeTaxCourtDirection(CourtDirectionBase):
     class Meta(CourtDirectionBase.Meta):
         verbose_name = "Income Tax Court Direction"
         verbose_name_plural = "Income Tax Court Directions"
+
+
+# ---------------------------------------------------------------------------
+# Rectification applications - office register, laid out like the Early
+# Hearing Register (section 57 Sales Tax Act 1990 / section 221 Income Tax
+# Ordinance 2001)
+# ---------------------------------------------------------------------------
+class RectificationBase(EntryBase):
+    """An application to rectify a mistake in the appellate order."""
+
+    class RequestBy(models.TextChoices):
+        DEPARTMENT = "department", "Department"
+        TAXPAYER = "taxpayer", "Taxpayer"
+        SUO_MOTO = "suo_moto", "Suo moto"
+
+    class Decision(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REJECTED = "rejected", "Rejected"
+        PARTLY_ACCEPTED = "partly_accepted", "Partially accepted"
+        PARTLY_REJECTED = "partly_rejected", "Partially rejected"
+        OTHERS = "others", "Others"
+
+    application_date = models.DateField("Date")
+    application_no = models.CharField("Application No.", max_length=60, blank=True)
+    request_by = models.CharField("Request By", max_length=20, choices=RequestBy.choices)
+    fixation_date = models.DateField("Fixation Date", null=True, blank=True)
+    decision = models.CharField("Decision", max_length=20, choices=Decision.choices,
+                                default=Decision.PENDING)
+    decision_date = models.DateField("Date of Decision", null=True, blank=True)
+
+    class Meta:
+        abstract = True
+        ordering = ["application_date", "pk"]
+
+    def __str__(self):
+        no = f" No. {self.application_no}" if self.application_no else ""
+        return f"Rectification application{no} of {self.application_date:%d-%m-%Y} in {self.appeal.appeal_no}"
+
+    @property
+    def is_decided(self):
+        return self.decision != self.Decision.PENDING
+
+
+class SalesTaxRectification(RectificationBase):
+    appeal = models.ForeignKey(
+        SalesTaxAppeal, on_delete=models.CASCADE, related_name="rectifications",
+        verbose_name="Appeal",
+    )
+
+    class Meta(RectificationBase.Meta):
+        verbose_name = "Sales Tax Rectification Application"
+        verbose_name_plural = "Sales Tax Rectification Applications"
+
+
+class IncomeTaxRectification(RectificationBase):
+    appeal = models.ForeignKey(
+        IncomeTaxAppeal, on_delete=models.CASCADE, related_name="rectifications",
+        verbose_name="Appeal",
+    )
+
+    class Meta(RectificationBase.Meta):
+        verbose_name = "Income Tax Rectification Application"
+        verbose_name_plural = "Income Tax Rectification Applications"

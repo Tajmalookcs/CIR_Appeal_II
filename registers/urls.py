@@ -20,3 +20,7 @@ urlpatterns += [
     path("<str:tax>/<str:kind>/<int:pk>/edit/", views.entry_update, name="entry_update"),
     path("<str:tax>/<str:kind>/<int:pk>/delete/", views.entry_delete, name="entry_delete"),
 ]
+
+urlpatterns += [
+    path("<str:tax>/rectifications/", views.rect_register, name="rect_register"),
+]

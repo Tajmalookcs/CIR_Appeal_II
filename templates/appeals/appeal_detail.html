@@ -428,6 +428,56 @@
         </div>
     </div>
 
+    <!-- Rectification applications (s.57 Sales Tax Act / s.221 Income Tax Ordinance) -->
+    <div class="col-12" id="rectifications">
+        <div class="panel">
+            <div class="panel-head">
+                <span><i class="bi bi-wrench-adjustable me-1"></i> Rectification Applications</span>
+                <span class="d-flex gap-2 no-print">
+                    <a href="{% url 'registers:rect_register' register %}" class="btn btn-sm btn-outline-secondary py-0">Register</a>
+                    {% if user.can_add %}
+                    <a href="{% url 'registers:entry_create' register appeal.pk 'rect' %}" class="btn btn-sm btn-fbr py-0"><i class="bi bi-plus-lg me-1"></i> Add Rectification Application</a>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="panel-body p-0">
+                {% with items=appeal.rectifications.all %}
+                {% if items %}
+                <table class="table table-register mb-0">
+                    <thead><tr><th>Date</th><th>Application No.</th><th>Request by</th><th>Fixation date</th><th>Decision</th><th>Remarks</th><th class="no-print"></th></tr></thead>
+                    <tbody>
+                        {% for r in items %}
+                        <tr>
+                            <td class="nowrap">{{ r.application_date|date:"d-m-Y" }}</td>
+                            <td class="nowrap">{{ r.application_no|default:"—" }}</td>
+                            <td class="nowrap">{{ r.get_request_by_display }}</td>
+                            <td class="nowrap">{{ r.fixation_date|date:"d-m-Y"|default:"—" }}</td>
+                            <td class="nowrap">
+                                {% if r.is_decided %}<span class="pill pill-info">{{ r.get_decision_display }}</span>{% if r.decision_date %} <small class="text-muted">{{ r.decision_date|date:"d-m-Y" }}</small>{% endif %}
+                                {% else %}<span class="pill pill-muted">Pending</span>{% endif %}
+                            </td>
+                            <td style="font-size:12px;">{{ r.remarks|default:"" }}</td>
+                            <td class="nowrap no-print">
+                                {% if user.can_edit %}<a href="{% url 'registers:entry_update' register 'rect' r.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>{% endif %}
+                                {% if user.can_delete %}
+                                <form method="post" action="{% url 'registers:entry_delete' register 'rect' r.pk %}" class="d-inline"
+                                      onsubmit="return confirm('Delete the rectification application of {{ r.application_date|date:'d-m-Y' }}?');">
+                                    {% csrf_token %}<button class="btn btn-sm btn-outline-danger py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0" style="font-size:13px;">No rectification application.</p>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
     <!-- Record history -->
     {% if user.can_view_logs %}
     <div class="col-12">

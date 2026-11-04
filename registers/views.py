@@ -26,10 +26,11 @@ from core.models import AuditLog
 from core.utils import diff, log_action, snapshot
 from core.workdays import Calendar, stay_dispose_by, stay_fixation_date
 
-from .forms import court_form_for, early_form_for, stay_form_for
+from .forms import court_form_for, early_form_for, rect_form_for, stay_form_for
 from .models import (IncomeTaxCourtDirection, IncomeTaxEarlyHearing,
-                     IncomeTaxStayApplication, SalesTaxCourtDirection,
-                     SalesTaxEarlyHearing, SalesTaxStayApplication)
+                     IncomeTaxRectification, IncomeTaxStayApplication,
+                     SalesTaxCourtDirection, SalesTaxEarlyHearing,
+                     SalesTaxRectification, SalesTaxStayApplication)
 
 TAXES = {
     "sales": {
@@ -49,6 +50,8 @@ TAXES = {
         "report_rule": "(See sub-rule (2) of Rule 150ZZD)",
         "law": "Sales Tax Rules, 2006",
         "stay_rule": "Rule 150ZZ",
+        "rect_rule": "(See Section 57)",
+        "rect_law": "Sales Tax Act, 1990",
     },
     "income": {
         "key": "income",
@@ -67,6 +70,8 @@ TAXES = {
         "report_rule": "(See sub-rule (2) of Rule 76L)",
         "law": "Income Tax Rules, 2002",
         "stay_rule": "Rule 76G",
+        "rect_rule": "(See Section 221)",
+        "rect_law": "Income Tax Ordinance, 2001",
     },
 }
 
@@ -440,6 +445,12 @@ KINDS = {
         "noun": "Early Hearing Request",
         "anchor": "early-hearings",
     },
+    "rect": {
+        "models": {"sales": SalesTaxRectification, "income": IncomeTaxRectification},
+        "form": rect_form_for,
+        "noun": "Rectification Application",
+        "anchor": "rectifications",
+    },
     "court": {
         "models": {"sales": SalesTaxCourtDirection, "income": IncomeTaxCourtDirection},
         "form": court_form_for,
@@ -549,16 +560,16 @@ def _common_filters(request, qs, tax, date_field):
 
 def _render_register(request, cfg, tax, context, filename):
     """Screen page, print sheet or Excel - the same data three ways."""
-    context.update({
-        "cfg": cfg, "tax": tax, "form_no": cfg["register_form"], "rule": cfg["register_rule"],
-        "zones": Zone.objects.filter(is_active=True),
-    })
+    context.setdefault("form_no", cfg["register_form"])
+    context.setdefault("rule", cfg["register_rule"])
+    context.setdefault("law", cfg["law"])
+    context.update({"cfg": cfg, "tax": tax, "zones": Zone.objects.filter(is_active=True)})
     if request.GET.get("export") == "xlsx":
         return _excel(
             f"{cfg['label'].replace(' ', '_')}_{filename}.xlsx",
             f"{cfg['label']} - {context['title']}",
-            f"{cfg['register_form']} {cfg['register_rule']} {cfg['law']}. "
-            f"{context['period_line']}".strip(),
+            " ".join(p for p in (context["form_no"], context["rule"], context["law"]) if p)
+            + (f". {context['period_line']}" if context["period_line"] else ""),
             context["headings"],
             [[c.replace("\n", ", ") if isinstance(c, str) else c for c in r["cells"]]
              for r in context["rows"]],
@@ -648,3 +659,53 @@ def court_register(request, tax):
                            ("complied", "Complied")],
         "by_options": None,
     }, "Court_Compliance_Register")
+
+
+# ---------------------------------------------------------------------------
+# Rectification Application Register (office register, like Early Hearing)
+# ---------------------------------------------------------------------------
+@login_required
+def rect_register(request, tax):
+    cfg = _tax(tax)
+    model = KINDS["rect"]["models"][tax]
+    qs = model.objects.select_related("appeal", "appeal__zone", "appeal__unit")
+    qs, f, period_line = _common_filters(request, qs, tax, "application_date")
+    if f["by"] in model.RequestBy.values:
+        qs = qs.filter(request_by=f["by"])
+    if f["status"] == "pending":
+        qs = qs.filter(decision=model.Decision.PENDING)
+    elif f["status"] == "decided":
+        qs = qs.exclude(decision=model.Decision.PENDING)
+    elif f["status"] in model.Decision.values:
+        qs = qs.filter(decision=f["status"])
+
+    headings = [
+        ("S.#", "(1)"), ("Appeal No.", "(2)"), ("Date of institution of Appeal", "(3)"),
+        (cfg["name_id_label"], "(4)"),
+        ("Tax Period" if tax == "sales" else "Tax year", "(5)"),
+        ("Application No.", "(6)"), ("Date", "(7)"),
+        ("Request by (Dept / Taxpayer / Suo moto)", "(8)"), ("Fixation date", "(9)"),
+        ("Decision", "(10)"), ("Zone/Field formation", "(11)"), ("Revenue involved", "(12)"),
+        ("Date of Appellate order", "(13)"),
+    ]
+    rows = []
+    for i, e in enumerate(qs.order_by("application_date", "pk"), start=1):
+        a = e.appeal
+        decision = e.get_decision_display()
+        if e.decision_date:
+            decision = f"{decision}\n({e.decision_date:%d-%m-%Y})"
+        rows.append({"entry": e, "cells": [
+            i, a.appeal_no, a.date_of_institution,
+            f"{a.appellant_name}\n{identity(a, tax)}".strip(),
+            period(a, tax), e.application_no, e.application_date, e.get_request_by_display(),
+            e.fixation_date, decision, _zone(a), amount(a, tax), a.decision_date,
+        ]})
+    decided = [(v, l) for v, l in model.Decision.choices if v != model.Decision.PENDING]
+    return _render_register(request, cfg, tax, {
+        "kind": "rect", "title": "Rectification Application Register", "headings": headings,
+        "rows": rows, "filters": f, "period_line": period_line, "amount_col": 11,
+        "date_label": "Application", "anchor": "rectifications",
+        "form_no": "", "rule": cfg["rect_rule"], "law": cfg["rect_law"],
+        "status_options": [("pending", "Pending"), ("decided", "Decided (any)")] + decided,
+        "by_options": model.RequestBy.choices,
+    }, "Rectification_Register")
