@@ -88,10 +88,25 @@ Done so far - **Stay Applications** (Rule 150ZZ / 76G):
 - MPR: the office proforma is kept as it is (office decision). Only the "Disposal of
   stay applications" row is now filled from these entries (`_mpr_stay_figures`).
 
-Still to build: Early Hearing Register, Compliance Register of Court Directions
-(column numbering skips (4) exactly as printed in both SROs - keep it), and the MPR
-"Superior Courts" row. Status choices were NOT extended to the SRO wording (Varied /
-Altered / Set aside; Enhanced / Other) because that would change the MPR columns.
+**Early Hearing Register** - `SalesTaxEarlyHearing` / `IncomeTaxEarlyHearing`: request
+date, made by (Taxpayer / Department), remarks. Column 10 (date of appellate order) is
+the appeal's own decision date. `/registers/<tax>/early-hearings/`.
+
+**Compliance Register of Court Directions/Orders** - `SalesTaxCourtDirection` /
+`IncomeTaxCourtDirection`: court (High Court / Supreme Court / ATIR / other), date of
+receipt, direction, last date for disposal, **date of appellate order passed in
+compliance** (held on the entry, not read from the appeal, because a remanded appeal
+already carries its first decision date). Past the last date and not complied -> red.
+Column numbering skips (4) exactly as printed in both SROs - keep it.
+`/registers/<tax>/court-directions/`. The MPR "Disposal of cases on directions of
+Superior Courts" row is filled from these (`_mpr_court_figures`).
+
+Both are entered from the appeal page (panels "Early Hearing Requests" and "Court
+Directions / Orders") through generic views `entry_create/update/delete` with
+`kind` = `early` | `court`; same roles and audit logging as stay applications.
+
+Status choices were NOT extended to the SRO wording (Varied / Altered / Set aside;
+Enhanced / Other) because that would change the MPR columns.
 
 ## Working Days and Holidays (`core.workdays`, `core.Holiday`)
 - Weekly off: Saturday, Sunday (`settings.OFFICE_WEEKEND`).

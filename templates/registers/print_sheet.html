@@ -70,7 +70,7 @@
 <div class="sheet">
     <div class="head">
         {% if form_no %}<div class="form-no">{{ form_no }}</div>{% endif %}
-        <div class="rule">{{ rule }}</div>
+        <div class="rule">{{ rule }}{% if not form_no %}<br>{{ cfg.law }}{% endif %}</div>
         <div class="office">{{ OFFICE_NAME }}, {{ OFFICE_SUBTITLE }} &mdash; {{ cfg.label }}</div>
         <div class="title">{{ title }}</div>
         {% if title_line2 %}<div class="title2">{{ title_line2 }}</div>{% endif %}

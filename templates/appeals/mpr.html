@@ -329,7 +329,18 @@
             {% endfor %}
         </tr>
         <tr>
+            {% if figures %}
+            <td class="val auto">{{ figures.courts.opening.count }}</td>
+            <td class="val auto">{{ figures.courts.opening.revenue }}</td>
+            <td class="val auto">{{ figures.courts.new.count }}</td>
+            <td class="val auto">{{ figures.courts.new.revenue }}</td>
+            <td class="val auto">{{ figures.courts.decided.count }}</td>
+            <td class="val auto">{{ figures.courts.decided.revenue }}</td>
+            <td class="val auto">{{ figures.courts.closing.count }}</td>
+            <td class="val auto">{{ figures.courts.closing.revenue }}</td>
+            {% else %}
             {% for cell in "12345678" %}<td class="val"></td>{% endfor %}
+            {% endif %}
         </tr>
     </table>
 
@@ -342,10 +353,10 @@
     {% if figures %}
     <div class="note">
         Figures in bold are taken from the {{ cfg.label }} register for
-        {{ period|date:"F Y" }}, and stay applications from the Stay Application
-        Register. Transfers, withdrawals, remand backs, ADRC stays and superior
-        court cases are not held in the register, so those boxes are left blank
-        to be entered by hand.
+        {{ period|date:"F Y" }}, stay applications from the Stay Application Register
+        and superior court cases from the Compliance Register of Court Directions.
+        Transfers, withdrawals, remand backs and ADRC stays are not held in the
+        register, so those boxes are left blank to be entered by hand.
     </div>
     {% endif %}
 

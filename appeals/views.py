@@ -148,9 +148,9 @@ def mpr_figures(cfg, year, month):
     """Everything on the proforma that the register can work out on its own.
 
     Anything the register does not record - transfers, withdrawals, remand
-    backs, ADRC stays and superior court directions - is deliberately absent
-    here and printed as an empty box for the office to fill in by hand. Stay
-    applications come from the Stay Application Register (registers app).
+    backs and ADRC stays - is deliberately absent here and printed as an empty
+    box for the office to fill in by hand. Stay applications and superior court
+    cases come from the registers app.
     """
     model = cfg["model"]
     amount = cfg["amount_field"]
@@ -196,6 +196,7 @@ def mpr_figures(cfg, year, month):
     stays = _mpr_stay_figures(model, amount, start, nxt)
     return {
         "stays": stays,
+        "courts": _mpr_court_figures(model, amount, start, nxt),
         "period": start,
         "fy_start": fy,
         "opening_balance": opening_count,
@@ -244,6 +245,25 @@ def _mpr_stay_figures(model, amount, start, nxt):
             "revenue": _millions(group.aggregate(t=Sum(f"appeal__{amount}"))["t"] or 0),
         }
     return out
+
+
+def _mpr_court_figures(model, amount, start, nxt):
+    """'Disposal of cases on directions of superior courts' for the month."""
+    from registers.models import IncomeTaxCourtDirection, SalesTaxCourtDirection
+
+    court_model = SalesTaxCourtDirection if model is SalesTaxAppeal else IncomeTaxCourtDirection
+    qs = court_model.objects.all()
+    groups = [
+        ("opening", court_model.open_on(qs, start)),
+        ("new", qs.filter(date_of_receipt__gte=start, date_of_receipt__lt=nxt)),
+        ("decided", qs.filter(date_of_appellate_order__gte=start, date_of_appellate_order__lt=nxt)),
+        ("closing", court_model.open_on(qs, nxt)),
+    ]
+    return {
+        key: {"count": g.count(),
+              "revenue": _millions(g.aggregate(t=Sum(f"appeal__{amount}"))["t"] or 0)}
+        for key, g in groups
+    }
 
 
 # ---------------------------------------------------------------------------

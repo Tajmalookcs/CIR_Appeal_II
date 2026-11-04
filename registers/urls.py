@@ -12,3 +12,11 @@ urlpatterns = [
     path("<str:tax>/stay/<int:pk>/edit/", views.stay_update, name="stay_update"),
     path("<str:tax>/stay/<int:pk>/delete/", views.stay_delete, name="stay_delete"),
 ]
+
+urlpatterns += [
+    path("<str:tax>/early-hearings/", views.early_register, name="early_register"),
+    path("<str:tax>/court-directions/", views.court_register, name="court_register"),
+    path("<str:tax>/appeal/<int:appeal_pk>/<str:kind>/add/", views.entry_create, name="entry_create"),
+    path("<str:tax>/<str:kind>/<int:pk>/edit/", views.entry_update, name="entry_update"),
+    path("<str:tax>/<str:kind>/<int:pk>/delete/", views.entry_delete, name="entry_delete"),
+]

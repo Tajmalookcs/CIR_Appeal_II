@@ -174,3 +174,122 @@ class IncomeTaxStayApplication(StayApplicationBase):
     class Meta(StayApplicationBase.Meta):
         verbose_name = "Income Tax Stay Application"
         verbose_name_plural = "Income Tax Stay Applications"
+
+
+# ---------------------------------------------------------------------------
+# Early hearing requests - STR-24 / Rule 76K
+# ---------------------------------------------------------------------------
+class EarlyHearingBase(EntryBase):
+    """A request to hear an appeal early, by the taxpayer or the department."""
+
+    class MadeBy(models.TextChoices):
+        TAXPAYER = "taxpayer", "Taxpayer"
+        DEPARTMENT = "department", "Department"
+
+    request_date = models.DateField("Request Date")
+    made_by = models.CharField("Request Made By", max_length=20, choices=MadeBy.choices)
+
+    class Meta:
+        abstract = True
+        ordering = ["request_date", "pk"]
+
+    def __str__(self):
+        return f"Early hearing request {self.request_date:%d-%m-%Y} in {self.appeal.appeal_no}"
+
+
+class SalesTaxEarlyHearing(EarlyHearingBase):
+    appeal = models.ForeignKey(
+        SalesTaxAppeal, on_delete=models.CASCADE, related_name="early_hearings",
+        verbose_name="Appeal",
+    )
+
+    class Meta(EarlyHearingBase.Meta):
+        verbose_name = "Sales Tax Early Hearing Request"
+        verbose_name_plural = "Sales Tax Early Hearing Requests"
+
+
+class IncomeTaxEarlyHearing(EarlyHearingBase):
+    appeal = models.ForeignKey(
+        IncomeTaxAppeal, on_delete=models.CASCADE, related_name="early_hearings",
+        verbose_name="Appeal",
+    )
+
+    class Meta(EarlyHearingBase.Meta):
+        verbose_name = "Income Tax Early Hearing Request"
+        verbose_name_plural = "Income Tax Early Hearing Requests"
+
+
+# ---------------------------------------------------------------------------
+# Court directions / orders - Compliance Register, STR-24 / Rule 76K
+# ---------------------------------------------------------------------------
+class CourtDirectionBase(EntryBase):
+    """A direction or order of a superior court in an appeal, and its compliance.
+
+    The register's last column is the date of the appellate order passed in
+    compliance. It is held here rather than read from the appeal, because a
+    remanded appeal already carries the date of its first decision.
+    """
+
+    class Court(models.TextChoices):
+        HIGH_COURT = "high_court", "High Court"
+        SUPREME_COURT = "supreme_court", "Supreme Court"
+        ATIR = "atir", "Appellate Tribunal Inland Revenue"
+        OTHER = "other", "Other"
+
+    court = models.CharField("Court", max_length=20, choices=Court.choices,
+                             default=Court.HIGH_COURT)
+    date_of_receipt = models.DateField("Date of Receipt of Court Order")
+    direction = models.TextField("Direction / Order of the Court")
+    last_date_for_disposal = models.DateField("Last Date for Disposal", null=True, blank=True)
+    date_of_appellate_order = models.DateField(
+        "Date of Appellate Order", null=True, blank=True,
+        help_text="Date of the order passed in compliance. Leave blank while pending.",
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["date_of_receipt", "pk"]
+
+    def __str__(self):
+        return f"Court direction received {self.date_of_receipt:%d-%m-%Y} in {self.appeal.appeal_no}"
+
+    @property
+    def is_complied(self):
+        return self.date_of_appellate_order is not None
+
+    @property
+    def is_overdue(self):
+        if not self.last_date_for_disposal:
+            return False
+        end = self.date_of_appellate_order or timezone.localdate()
+        return end > self.last_date_for_disposal
+
+    @classmethod
+    def open_on(cls, qs, day):
+        """Received before `day` and not complied with before it."""
+        return qs.filter(date_of_receipt__lt=day).filter(
+            models.Q(date_of_appellate_order__isnull=True)
+            | models.Q(date_of_appellate_order__gte=day)
+        )
+
+
+class SalesTaxCourtDirection(CourtDirectionBase):
+    appeal = models.ForeignKey(
+        SalesTaxAppeal, on_delete=models.CASCADE, related_name="court_directions",
+        verbose_name="Appeal",
+    )
+
+    class Meta(CourtDirectionBase.Meta):
+        verbose_name = "Sales Tax Court Direction"
+        verbose_name_plural = "Sales Tax Court Directions"
+
+
+class IncomeTaxCourtDirection(CourtDirectionBase):
+    appeal = models.ForeignKey(
+        IncomeTaxAppeal, on_delete=models.CASCADE, related_name="court_directions",
+        verbose_name="Appeal",
+    )
+
+    class Meta(CourtDirectionBase.Meta):
+        verbose_name = "Income Tax Court Direction"
+        verbose_name_plural = "Income Tax Court Directions"

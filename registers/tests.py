@@ -9,7 +9,9 @@ from appeals.views import _mpr_stay_figures
 from core.models import Holiday, HolidayYear
 from core.workdays import Calendar, stay_dispose_by, stay_fixation_date
 
-from .models import IncomeTaxStayApplication, SalesTaxStayApplication
+from .models import (IncomeTaxCourtDirection, IncomeTaxEarlyHearing,
+                     IncomeTaxStayApplication, SalesTaxCourtDirection,
+                     SalesTaxStayApplication)
 
 
 class WorkingDaysTests(TestCase):
@@ -106,3 +108,67 @@ class StayApplicationTests(TestCase):
         self.assertEqual(f["pending_10"]["count"], 2)
         self.assertEqual(f["closing"]["count"], 3)
         self.assertEqual(str(f["closing"]["revenue"]), "15.000")
+
+
+class EarlyAndCourtTests(TestCase):
+    def setUp(self):
+        HolidayYear.objects.create(year=2026)
+        self.st = SalesTaxAppeal.objects.create(
+            serial_no=7, date_of_institution=date(2026, 9, 1), appellant_name="ST One",
+            sales_tax_involved=3_000_000)
+        self.it = IncomeTaxAppeal.objects.create(
+            serial_no=7, date_of_institution=date(2026, 9, 1), appellant_name="IT One",
+            revenue_involved=1_000_000)
+        self.clerk = User.objects.create_user("3310000000003", password="x", role=User.ROLE_DATA_ENTRY)
+        self.admin = User.objects.create_user("3310000000001", password="x", role=User.ROLE_ADMIN)
+
+    def test_add_early_hearing_and_register_columns(self):
+        self.client.force_login(self.clerk)
+        url = reverse("registers:entry_create", args=["income", self.it.pk, "early"])
+        r = self.client.post(url, {"request_date": "2026-11-02", "made_by": "department"})
+        self.assertEqual(r.status_code, 302)
+        page = self.client.get(reverse("registers:early_register", args=["income"]))
+        row = page.context["rows"][0]["cells"]
+        self.assertEqual(row[5], date(2026, 11, 2))
+        self.assertEqual(row[6], "Department")
+        self.assertEqual([n for _, n in page.context["headings"]][-1], "(10)")
+        self.assertEqual(len(self.client.get(
+            reverse("registers:early_register", args=["sales"])).context["rows"]), 0)
+
+    def test_court_register_numbering_skips_four(self):
+        SalesTaxCourtDirection.objects.create(
+            appeal=self.st, date_of_receipt=date(2026, 10, 1), direction="Decide afresh",
+            last_date_for_disposal=date(2026, 10, 31))
+        self.client.force_login(self.clerk)
+        page = self.client.get(reverse("registers:court_register", args=["sales"]))
+        self.assertEqual([n for _, n in page.context["headings"]],
+                         ["(1)", "(2)", "(3)", "(5)", "(6)", "(7)", "(8)"])
+        overdue = self.client.get(reverse("registers:court_register", args=["sales"]) + "?status=overdue")
+        self.assertEqual(len(overdue.context["rows"]), 1)
+
+    def test_clerk_cannot_delete_admin_can(self):
+        e = IncomeTaxEarlyHearing.objects.create(appeal=self.it, request_date=date(2026, 11, 1),
+                                                 made_by="taxpayer")
+        url = reverse("registers:entry_delete", args=["income", "early", e.pk])
+        self.client.force_login(self.clerk)
+        self.assertEqual(self.client.post(url).status_code, 403)
+        self.client.force_login(self.admin)
+        self.client.post(url)
+        self.assertFalse(IncomeTaxEarlyHearing.objects.exists())
+
+    def test_court_date_validation(self):
+        self.client.force_login(self.clerk)
+        url = reverse("registers:entry_create", args=["sales", self.st.pk, "court"])
+        r = self.client.post(url, {"court": "high_court", "date_of_receipt": "2026-10-10",
+                                   "direction": "x", "last_date_for_disposal": "2026-10-01"})
+        self.assertIn("last_date_for_disposal", r.context["form"].errors)
+
+    def test_mpr_court_figures(self):
+        from appeals.views import _mpr_court_figures
+        mk = IncomeTaxCourtDirection.objects.create
+        mk(appeal=self.it, date_of_receipt=date(2026, 9, 10), direction="a")                # opening, open
+        mk(appeal=self.it, date_of_receipt=date(2026, 9, 20), direction="b",
+           date_of_appellate_order=date(2026, 10, 15))                                     # opening, decided
+        mk(appeal=self.it, date_of_receipt=date(2026, 10, 5), direction="c")                # new
+        f = _mpr_court_figures(IncomeTaxAppeal, "revenue_involved", date(2026, 10, 1), date(2026, 11, 1))
+        self.assertEqual([f[k]["count"] for k in ("opening", "new", "decided", "closing")], [2, 1, 1, 2])

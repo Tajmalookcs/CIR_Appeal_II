@@ -48,3 +48,49 @@ def stay_form_for(model):
     """A ModelForm for one tax's stay application table."""
     return forms.modelform_factory(model, form=StayFormBase,
                                    fields=STAY_FIELDS, widgets=STAY_WIDGETS)
+
+
+# ---------------------------------------------------------------------------
+# Early hearing requests
+# ---------------------------------------------------------------------------
+EARLY_FIELDS = ["request_date", "made_by", "remarks"]
+EARLY_WIDGETS = {
+    "request_date": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "made_by": forms.Select(attrs={"class": "form-select"}),
+    "remarks": forms.TextInput(attrs={"class": "form-control"}),
+}
+
+
+def early_form_for(model):
+    return forms.modelform_factory(model, fields=EARLY_FIELDS, widgets=EARLY_WIDGETS)
+
+
+# ---------------------------------------------------------------------------
+# Court directions
+# ---------------------------------------------------------------------------
+COURT_FIELDS = ["court", "date_of_receipt", "direction", "last_date_for_disposal",
+                "date_of_appellate_order", "remarks"]
+COURT_WIDGETS = {
+    "court": forms.Select(attrs={"class": "form-select"}),
+    "date_of_receipt": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "direction": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    "last_date_for_disposal": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "date_of_appellate_order": forms.DateInput(attrs=DATE, format="%Y-%m-%d"),
+    "remarks": forms.TextInput(attrs={"class": "form-control"}),
+}
+
+
+class CourtFormBase(forms.ModelForm):
+    def clean(self):
+        data = super().clean()
+        received = data.get("date_of_receipt")
+        for field in ("last_date_for_disposal", "date_of_appellate_order"):
+            value = data.get(field)
+            if received and value and value < received:
+                self.add_error(field, "Cannot be before the date of receipt of the court order.")
+        return data
+
+
+def court_form_for(model):
+    return forms.modelform_factory(model, form=CourtFormBase,
+                                   fields=COURT_FIELDS, widgets=COURT_WIDGETS)

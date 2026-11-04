@@ -69,10 +69,14 @@
                     <li><h6 class="dropdown-header">Sales Tax (STR-24 / STR-26)</h6></li>
                     <li><a class="dropdown-item" href="{% url 'registers:stay_register' 'sales' %}">Stay Application Register</a></li>
                     <li><a class="dropdown-item" href="{% url 'registers:stay_report' 'sales' %}">Stay Applications Disposal Report</a></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:early_register' 'sales' %}">Early Hearing Register</a></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:court_register' 'sales' %}">Compliance Register of Court Directions</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header">Income Tax (Rule 76K / 76L)</h6></li>
                     <li><a class="dropdown-item" href="{% url 'registers:stay_register' 'income' %}">Stay Application Register</a></li>
                     <li><a class="dropdown-item" href="{% url 'registers:stay_report' 'income' %}">Stay Applications Disposal Report</a></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:early_register' 'income' %}">Early Hearing Register</a></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:court_register' 'income' %}">Compliance Register of Court Directions</a></li>
                     {% if user.is_admin %}
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="{% url 'core:holiday_list' %}"><i class="bi bi-calendar-event me-1"></i> Holidays (working days)</a></li>

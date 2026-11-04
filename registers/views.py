@@ -26,8 +26,10 @@ from core.models import AuditLog
 from core.utils import diff, log_action, snapshot
 from core.workdays import Calendar, stay_dispose_by, stay_fixation_date
 
-from .forms import stay_form_for
-from .models import IncomeTaxStayApplication, SalesTaxStayApplication
+from .forms import court_form_for, early_form_for, stay_form_for
+from .models import (IncomeTaxCourtDirection, IncomeTaxEarlyHearing,
+                     IncomeTaxStayApplication, SalesTaxCourtDirection,
+                     SalesTaxEarlyHearing, SalesTaxStayApplication)
 
 TAXES = {
     "sales": {
@@ -40,6 +42,7 @@ TAXES = {
         "name_id_label": "Name, STRN/ CNIC",
         "period_label": "Tax Period(s)",
         "amount_field": "sales_tax_involved",
+        "decision_field": "oia_date",
         "register_form": "STR-24",
         "register_rule": "(See Rule-150ZZC)",
         "report_form": "STR-26",
@@ -57,6 +60,7 @@ TAXES = {
         "name_id_label": "Name, NTN/ CNIC",
         "period_label": "Tax year",
         "amount_field": "revenue_involved",
+        "decision_field": "appellate_order_date",
         "register_form": "",
         "register_rule": "(See Rule-76K)",
         "report_form": "",
@@ -424,3 +428,223 @@ def stay_report(request, tax):
     if request.GET.get("print") == "1":
         return render(request, "registers/print_sheet.html", context)
     return render(request, "registers/stay_report.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Early hearing requests and court directions: entry from the appeal's page
+# ---------------------------------------------------------------------------
+KINDS = {
+    "early": {
+        "models": {"sales": SalesTaxEarlyHearing, "income": IncomeTaxEarlyHearing},
+        "form": early_form_for,
+        "noun": "Early Hearing Request",
+        "anchor": "early-hearings",
+    },
+    "court": {
+        "models": {"sales": SalesTaxCourtDirection, "income": IncomeTaxCourtDirection},
+        "form": court_form_for,
+        "noun": "Court Direction",
+        "anchor": "court-directions",
+    },
+}
+
+
+def _kind(kind):
+    if kind not in KINDS:
+        raise Http404("Unknown register")
+    return KINDS[kind]
+
+
+def _entry_save(request, tax, kind, appeal_pk=None, pk=None):
+    cfg, k = _tax(tax), _kind(kind)
+    model = k["models"][tax]
+    if pk:
+        entry = get_object_or_404(model.objects.select_related("appeal"), pk=pk)
+        appeal = entry.appeal
+    else:
+        entry = None
+        appeal = get_object_or_404(cfg["appeal_model"], pk=appeal_pk)
+    before = snapshot(entry) if entry else {}
+    back = reverse(cfg["appeal_detail_url"], args=[appeal.pk]) + "#" + k["anchor"]
+
+    form = k["form"](model)(request.POST or None, instance=entry)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.appeal = appeal
+        stamp = _who(request.user)
+        if entry is None:
+            obj.created_by = request.user
+            obj.created_by_name = stamp
+        obj.updated_by = request.user
+        obj.updated_by_name = stamp
+        obj.save()
+        log_action(
+            request,
+            AuditLog.Action.UPDATE if entry else AuditLog.Action.CREATE,
+            instance=obj,
+            changes=diff(before, snapshot(obj)) if entry else snapshot(obj),
+            model_name=model._meta.verbose_name.title(),
+        )
+        messages.success(request, f"{k['noun']} {'updated' if entry else 'entered'} "
+                                  f"for appeal {appeal.appeal_no}.")
+        return redirect(back)
+
+    return render(request, "core/simple_form.html", {
+        "form": form,
+        "title": ("Edit " if entry else "Add ") + k["noun"],
+        "subtitle": f"{cfg['label']} appeal {appeal.appeal_no} - {appeal.appellant_name}",
+        "back_url": back,
+        "submit_label": "Save " + k["noun"],
+    })
+
+
+@login_required
+@can_add_required
+def entry_create(request, tax, kind, appeal_pk):
+    return _entry_save(request, tax, kind, appeal_pk=appeal_pk)
+
+
+@login_required
+@can_edit_required
+def entry_update(request, tax, kind, pk):
+    return _entry_save(request, tax, kind, pk=pk)
+
+
+@login_required
+@can_delete_required
+def entry_delete(request, tax, kind, pk):
+    cfg, k = _tax(tax), _kind(kind)
+    model = k["models"][tax]
+    entry = get_object_or_404(model.objects.select_related("appeal"), pk=pk)
+    back = reverse(cfg["appeal_detail_url"], args=[entry.appeal_id]) + "#" + k["anchor"]
+    if request.method == "POST":
+        repr_ = str(entry)
+        log_action(request, AuditLog.Action.DELETE, instance=entry, changes=snapshot(entry),
+                   model_name=model._meta.verbose_name.title(), object_repr=repr_)
+        entry.delete()
+        messages.success(request, f"{repr_} was deleted.")
+    return redirect(back)
+
+
+def _common_filters(request, qs, tax, date_field):
+    """Search, zone and date range - the same on every register."""
+    f = {k: request.GET.get(k, "").strip() for k in ("from", "to", "zone", "status", "q", "by")}
+    d_from, d_to = _parse_date(f["from"]), _parse_date(f["to"])
+    if d_from:
+        qs = qs.filter(**{f"{date_field}__gte": d_from})
+    if d_to:
+        qs = qs.filter(**{f"{date_field}__lte": d_to})
+    if f["zone"]:
+        qs = qs.filter(appeal__zone_id=f["zone"])
+    if f["q"]:
+        q = f["q"]
+        lookup = Q(appeal__appellant_name__icontains=q) | Q(appeal__ntn__icontains=q)
+        lookup |= Q(appeal__strn__icontains=q) if tax == "sales" else Q(appeal__cnic__icontains=q)
+        digits = [p for p in q.replace("/", " ").split() if p.isdigit()]
+        if digits:
+            lookup |= Q(appeal__serial_no=int(digits[0]))
+        qs = qs.filter(lookup)
+    return qs, f, _range_line(d_from, d_to)
+
+
+def _render_register(request, cfg, tax, context, filename):
+    """Screen page, print sheet or Excel - the same data three ways."""
+    context.update({
+        "cfg": cfg, "tax": tax, "form_no": cfg["register_form"], "rule": cfg["register_rule"],
+        "zones": Zone.objects.filter(is_active=True),
+    })
+    if request.GET.get("export") == "xlsx":
+        return _excel(
+            f"{cfg['label'].replace(' ', '_')}_{filename}.xlsx",
+            f"{cfg['label']} - {context['title']}",
+            f"{cfg['register_form']} {cfg['register_rule']} {cfg['law']}. "
+            f"{context['period_line']}".strip(),
+            context["headings"],
+            [[c.replace("\n", ", ") if isinstance(c, str) else c for c in r["cells"]]
+             for r in context["rows"]],
+        )
+    if request.GET.get("print") == "1":
+        return render(request, "registers/print_sheet.html", context)
+    return render(request, "registers/entry_register.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Early Hearing Register
+# ---------------------------------------------------------------------------
+@login_required
+def early_register(request, tax):
+    cfg = _tax(tax)
+    qs = KINDS["early"]["models"][tax].objects.select_related(
+        "appeal", "appeal__zone", "appeal__unit")
+    qs, f, period_line = _common_filters(request, qs, tax, "request_date")
+    if f["by"] in ("taxpayer", "department"):
+        qs = qs.filter(made_by=f["by"])
+    if f["status"] == "pending":
+        qs = qs.filter(**{f"appeal__{cfg['decision_field']}__isnull": True})
+    elif f["status"] == "decided":
+        qs = qs.filter(**{f"appeal__{cfg['decision_field']}__isnull": False})
+
+    headings = [
+        ("S.#", "(1)"), ("Appeal No.", "(2)"), ("Date of institution of Appeal", "(3)"),
+        (cfg["name_id_label"], "(4)"),
+        ("Tax Period" if tax == "sales" else "Tax year", "(5)"), ("Request date", "(6)"),
+        ("Request made by (Taxpayer / Dept)", "(7)"), ("Zone/Field formation", "(8)"),
+        ("Revenue involved", "(9)"), ("Date of Appellate order", "(10)"),
+    ]
+    rows = []
+    for i, e in enumerate(qs.order_by("request_date", "pk"), start=1):
+        a = e.appeal
+        rows.append({"entry": e, "cells": [
+            i, a.appeal_no, a.date_of_institution,
+            f"{a.appellant_name}\n{identity(a, tax)}".strip(),
+            period(a, tax), e.request_date, e.get_made_by_display(), _zone(a),
+            amount(a, tax), a.decision_date,
+        ]})
+    return _render_register(request, cfg, tax, {
+        "kind": "early", "title": "Early Hearing Register", "headings": headings,
+        "rows": rows, "filters": f, "period_line": period_line, "amount_col": 8,
+        "date_label": "Request", "anchor": "early-hearings",
+        "status_options": [("pending", "Appeal pending"), ("decided", "Appeal decided")],
+        "by_options": [("taxpayer", "Taxpayer"), ("department", "Department")],
+    }, "Early_Hearing_Register")
+
+
+# ---------------------------------------------------------------------------
+# Compliance Register of Court Directions/Orders
+# ---------------------------------------------------------------------------
+@login_required
+def court_register(request, tax):
+    cfg = _tax(tax)
+    qs = KINDS["court"]["models"][tax].objects.select_related(
+        "appeal", "appeal__zone", "appeal__unit")
+    qs, f, period_line = _common_filters(request, qs, tax, "date_of_receipt")
+    today = timezone.localdate()
+    if f["status"] == "pending":
+        qs = qs.filter(date_of_appellate_order__isnull=True)
+    elif f["status"] == "overdue":
+        qs = qs.filter(date_of_appellate_order__isnull=True, last_date_for_disposal__lt=today)
+    elif f["status"] == "complied":
+        qs = qs.filter(date_of_appellate_order__isnull=False)
+
+    # Numbered exactly as printed in both SROs: (4) does not appear.
+    headings = [
+        ("S.#", "(1)"), ("Appeal No", "(2)"), (cfg["name_id_label"], "(3)"),
+        ("Date of Receipt of Court Order", "(5)"), ("Direction/ Order of the Court", "(6)"),
+        ("Last Date for Disposal", "(7)"), ("Date of Appellate order", "(8)"),
+    ]
+    rows = []
+    for i, e in enumerate(qs.order_by("date_of_receipt", "pk"), start=1):
+        a = e.appeal
+        rows.append({"entry": e, "cells": [
+            i, a.appeal_no, f"{a.appellant_name}\n{identity(a, tax)}".strip(),
+            e.date_of_receipt, f"{e.get_court_display()}: {e.direction}",
+            e.last_date_for_disposal, e.date_of_appellate_order,
+        ]})
+    return _render_register(request, cfg, tax, {
+        "kind": "court", "title": "Compliance Register of Court Directions/Orders",
+        "headings": headings, "rows": rows, "filters": f, "period_line": period_line,
+        "amount_col": None, "date_label": "Received", "anchor": "court-directions",
+        "status_options": [("pending", "Pending compliance"), ("overdue", "Pending & past last date"),
+                           ("complied", "Complied")],
+        "by_options": None,
+    }, "Court_Compliance_Register")
