@@ -273,6 +273,68 @@
         </div>
     </div>
 
+    <!-- Stay applications (Sales Tax Rule 150ZZ / Income Tax Rule 76G) -->
+    <div class="col-12" id="stay-applications">
+        <div class="panel">
+            <div class="panel-head">
+                <span><i class="bi bi-pause-circle me-1"></i> Stay Applications</span>
+                <span class="d-flex gap-2 no-print">
+                    <a href="{% url 'registers:stay_register' register %}" class="btn btn-sm btn-outline-secondary py-0">Register</a>
+                    {% if user.can_add %}
+                    <a href="{% url 'registers:stay_create' register appeal.pk %}" class="btn btn-sm btn-fbr py-0">
+                        <i class="bi bi-plus-lg me-1"></i> Add Stay Application
+                    </a>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="panel-body p-0">
+                {% with stays=appeal.stay_applications.all %}
+                {% if stays %}
+                <table class="table table-register mb-0">
+                    <thead><tr>
+                        <th>Received</th><th>Fixed for hearing</th><th>Dispose by</th>
+                        <th>Decision</th><th>Date of order</th><th>Remarks</th><th class="no-print"></th>
+                    </tr></thead>
+                    <tbody>
+                        {% for s in stays %}
+                        <tr class="{% if s.is_overdue and not s.is_disposed %}row-overdue-180{% endif %}">
+                            <td class="nowrap">{{ s.date_of_receipt|date:"d-m-Y" }}{% if s.time_of_receipt %} <span class="text-muted">{{ s.time_of_receipt|time:"h:i A" }}</span>{% endif %}</td>
+                            <td class="nowrap">{{ s.date_of_fixation|date:"d-m-Y" }}</td>
+                            <td class="nowrap">
+                                {{ s.dispose_by|date:"d-m-Y" }}
+                                {% if s.is_overdue %}<br><small style="color:var(--danger);font-weight:600;">{% if s.is_disposed %}disposed {{ s.days_late }} day{{ s.days_late|pluralize }} late{% else %}overdue{% endif %}</small>{% endif %}
+                            </td>
+                            <td class="nowrap">
+                                {% if s.decision == "granted" %}<span class="pill pill-ok">{{ s.outcome }}</span>
+                                {% elif s.decision == "not_granted" %}<span class="pill pill-danger">{{ s.outcome }}</span>
+                                {% else %}<span class="pill pill-muted">Pending</span>{% endif %}
+                            </td>
+                            <td class="nowrap">{{ s.date_of_order|date:"d-m-Y"|default:"—" }}</td>
+                            <td style="font-size:12px;">{{ s.remarks|default:"" }}</td>
+                            <td class="nowrap no-print">
+                                {% if user.can_edit %}
+                                <a href="{% url 'registers:stay_update' register s.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                                {% endif %}
+                                {% if user.can_delete %}
+                                <form method="post" action="{% url 'registers:stay_delete' register s.pk %}" class="d-inline"
+                                      onsubmit="return confirm('Delete the stay application received on {{ s.date_of_receipt|date:'d-m-Y' }}?');">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger py-0 px-1" title="Delete"><i class="bi bi-trash"></i></button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0" style="font-size:13px;">No stay application in this appeal.</p>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
     <!-- Record history -->
     {% if user.can_view_logs %}
     <div class="col-12">

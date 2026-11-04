@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "accounts",
     "appeals",
     "core",
+    "registers",
 ]
 
 MIDDLEWARE = [
@@ -175,6 +176,14 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Working days for the stay application deadlines (core.workdays).
+# Weekly off days, Monday = 0: Saturday and Sunday.
+OFFICE_WEEKEND = (5, 6)
+# Days added to the Saudi (Umm al-Qura) Hijri date to get Pakistan's
+# moon-sighted date for the Islamic holidays. Admin confirms each one on the
+# Holidays page, so this only sets the first guess.
+HIJRI_OFFSET_DAYS = 1
 
 
 # ---------------------------------------------------------------------------

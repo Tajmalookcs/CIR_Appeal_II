@@ -1,0 +1,107 @@
+{% load register_cells %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ cfg.label }} {{ title }}</title>
+    <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Times New Roman", Georgia, serif;
+            font-size: 12px;
+            color: #000;
+            background: #eee;
+            margin: 0;
+            padding: 16px;
+        }
+        .sheet {
+            width: 297mm;
+            min-height: 210mm;
+            margin: 0 auto;
+            background: #fff;
+            padding: 10mm;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+        }
+        .head { text-align: center; line-height: 1.35; margin-bottom: 5mm; }
+        .head .form-no { font-weight: bold; font-size: 14px; }
+        .head .rule { font-weight: bold; font-size: 13px; }
+        .head .office { font-weight: bold; font-size: 13px; margin-top: 2mm; }
+        .head .title { font-weight: bold; font-size: 15px; text-decoration: underline;
+                       text-transform: uppercase; margin-top: 3mm; }
+        .head .title2 { font-weight: bold; font-size: 13px; text-transform: uppercase; }
+        .head .period { font-size: 12px; margin-top: 1mm; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #000; padding: 1.5mm 1.5mm; vertical-align: top; }
+        th { font-weight: normal; text-align: left; vertical-align: top; }
+        tr.nums td { text-align: center; padding: 1mm; }
+        td.num { text-align: right; white-space: nowrap; }
+        td.c { text-align: center; }
+        td.nowrap { white-space: nowrap; }
+        tr { page-break-inside: avoid; }
+        thead { display: table-header-group; }
+        .empty td { height: 9mm; }
+        .foot { margin-top: 3mm; font-size: 11px; }
+
+        .toolbar {
+            width: 297mm; margin: 0 auto 10px; display: flex; gap: 8px; justify-content: flex-end;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 13px;
+        }
+        .toolbar a, .toolbar button {
+            font: inherit; padding: 6px 12px; border: 1px solid #1e6b46; background: #1e6b46;
+            color: #fff; border-radius: 4px; text-decoration: none; cursor: pointer;
+        }
+        .toolbar a { background: #fff; color: #1e6b46; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .sheet { width: auto; min-height: 0; box-shadow: none; padding: 0; margin: 0; }
+            .toolbar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <a href="javascript:history.back()">&larr; Back</a>
+    <button type="button" onclick="window.print()">Print</button>
+</div>
+
+<div class="sheet">
+    <div class="head">
+        {% if form_no %}<div class="form-no">{{ form_no }}</div>{% endif %}
+        <div class="rule">{{ rule }}</div>
+        <div class="office">{{ OFFICE_NAME }}, {{ OFFICE_SUBTITLE }} &mdash; {{ cfg.label }}</div>
+        <div class="title">{{ title }}</div>
+        {% if title_line2 %}<div class="title2">{{ title_line2 }}</div>{% endif %}
+        {% if period_line %}<div class="period">{{ period_line }}</div>{% endif %}
+    </div>
+
+    <table>
+        <thead>
+            <tr>{% for label, num in headings %}<th>{{ label }}</th>{% endfor %}</tr>
+            <tr class="nums">{% for label, num in headings %}<td>{{ num }}</td>{% endfor %}</tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for value in row.cells %}
+                <td class="{% if forloop.counter0 == amount_col %}num{% elif forloop.first %}c{% elif forloop.counter0 == 1 %}nowrap{% endif %}">{{ value|cell }}</td>
+                {% endfor %}
+            </tr>
+            {% empty %}
+            <tr class="empty">{% for h in headings %}<td></td>{% endfor %}</tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="foot">{{ rows|length }} entr{{ rows|length|pluralize:"y,ies" }} &middot; printed {% now "d-m-Y H:i" %}</div>
+</div>
+
+<script>
+    if (new URLSearchParams(location.search).get("autoprint") === "1") {
+        window.addEventListener("load", function () { window.print(); });
+    }
+</script>
+</body>
+</html>

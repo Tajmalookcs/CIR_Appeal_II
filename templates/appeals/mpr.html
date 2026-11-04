@@ -297,7 +297,20 @@
             {% endfor %}
         </tr>
         <tr>
+            {% if figures %}
+            <td class="val auto">{{ figures.stays.opening.count }}</td>
+            <td class="val auto">{{ figures.stays.opening.revenue }}</td>
+            <td class="val auto">{{ figures.stays.new.count }}</td>
+            <td class="val auto">{{ figures.stays.new.revenue }}</td>
+            <td class="val auto">{{ figures.stays.decided.count }}</td>
+            <td class="val auto">{{ figures.stays.decided.revenue }}</td>
+            <td class="val auto">{{ figures.stays.pending_10.count }}</td>
+            <td class="val auto">{{ figures.stays.pending_10.revenue }}</td>
+            <td class="val auto">{{ figures.stays.closing.count }}</td>
+            <td class="val auto">{{ figures.stays.closing.revenue }}</td>
+            {% else %}
             {% for cell in "1234567890" %}<td class="val"></td>{% endfor %}
+            {% endif %}
         </tr>
     </table>
 
@@ -329,9 +342,10 @@
     {% if figures %}
     <div class="note">
         Figures in bold are taken from the {{ cfg.label }} register for
-        {{ period|date:"F Y" }}. Transfers, withdrawals, remand backs, ADRC stays,
-        stay applications and superior court cases are not held in the register,
-        so those boxes are left blank to be entered by hand.
+        {{ period|date:"F Y" }}, and stay applications from the Stay Application
+        Register. Transfers, withdrawals, remand backs, ADRC stays and superior
+        court cases are not held in the register, so those boxes are left blank
+        to be entered by hand.
     </div>
     {% endif %}
 

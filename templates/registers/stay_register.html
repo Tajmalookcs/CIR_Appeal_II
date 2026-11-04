@@ -1,0 +1,127 @@
+{% extends "base/base.html" %}
+{% load register_cells %}
+
+{% block title %}{{ cfg.label }} Stay Application Register{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">{{ cfg.label }} &mdash; Stay Application Register</h1>
+        <p class="page-subtitle">{% if form_no %}{{ form_no }} {% endif %}{{ rule }}, {{ cfg.law }} &middot; {{ rows|length }} entr{{ rows|length|pluralize:"y,ies" }}</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="{% url 'registers:stay_report' tax %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-text me-1"></i> Disposal Report
+        </a>
+        <a href="?{{ request.GET.urlencode }}&amp;export=xlsx" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+        </a>
+        <a href="?{{ request.GET.urlencode }}&amp;print=1" class="btn btn-fbr btn-sm" target="_blank">
+            <i class="bi bi-printer me-1"></i> Print Register
+        </a>
+    </div>
+</div>
+
+<div class="panel mb-3 no-print">
+    <div class="panel-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm"
+                       placeholder="Appeal No., name, {{ cfg.id_label }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label">Zone</label>
+                <select name="zone" class="form-select form-select-sm">
+                    <option value="">All Zones</option>
+                    {% for z in zones %}
+                    <option value="{{ z.pk }}" {% if filters.zone == z.pk|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="pending" {% if filters.status == "pending" %}selected{% endif %}>Pending</option>
+                    <option value="overdue" {% if filters.status == "overdue" %}selected{% endif %}>Pending &amp; overdue</option>
+                    <option value="disposed" {% if filters.status == "disposed" %}selected{% endif %}>Disposed</option>
+                    <option value="granted" {% if filters.status == "granted" %}selected{% endif %}>Stay granted</option>
+                    <option value="not_granted" {% if filters.status == "not_granted" %}selected{% endif %}>Not granted</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label">Received From</label>
+                <input type="date" name="from" value="{{ filters.from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label">Received To</label>
+                <input type="date" name="to" value="{{ filters.to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-12 col-md-1 d-flex gap-1">
+                <button class="btn btn-fbr btn-sm flex-grow-1"><i class="bi bi-search"></i></button>
+                <a href="?" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-x-lg"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="table-responsive">
+        <table class="table table-register table-hover mb-0">
+            <thead>
+                <tr>
+                    {% for label, num in headings %}<th>{{ label }}<br><small>{{ num }}</small></th>{% endfor %}
+                    <th class="no-print">Hearing / dispose by<br><small>Rule {{ cfg.stay_rule|cut:"Rule " }}</small></th>
+                    <th class="no-print"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                {% with e=row.entry %}
+                <tr class="{% if e.overdue and not e.date_of_order %}row-overdue-180{% endif %}">
+                    {% for value in row.cells %}
+                    {% if forloop.counter0 == 1 %}
+                    <td class="nowrap fw-semibold"><a href="{% url cfg.appeal_detail_url e.appeal_id %}#stay-applications" style="color:var(--fbr-green-dark);">{{ value }}</a></td>
+                    {% elif forloop.counter0 == amount_col %}
+                    <td class="num">{{ value|cell }}</td>
+                    {% elif forloop.counter0 == 8 %}
+                    <td class="nowrap">
+                        {% if e.decision == "granted" %}<span class="pill pill-ok">{{ value }}</span>
+                        {% elif e.decision == "not_granted" %}<span class="pill pill-danger">{{ value }}</span>
+                        {% else %}<span class="pill pill-muted">Pending</span>{% endif %}
+                    </td>
+                    {% else %}
+                    <td class="{% if forloop.counter0 != 3 %}nowrap{% endif %}" {% if forloop.counter0 == 3 %}style="min-width:170px;"{% endif %}>{{ value|cell }}</td>
+                    {% endif %}
+                    {% endfor %}
+                    <td class="nowrap no-print" style="font-size:12px;">
+                        {{ e.date_of_fixation|date:"d-m-Y" }}<br>
+                        {% if e.date_of_order %}
+                            {% if e.overdue %}<span style="color:var(--danger);font-weight:600;">disposed {{ e.late_days }} day{{ e.late_days|pluralize }} late</span>
+                            {% else %}<span class="text-muted">disposed in time</span>{% endif %}
+                        {% elif e.overdue %}
+                            <span style="color:var(--danger);font-weight:600;">overdue since {{ e.due|date:"d-m-Y" }}</span>
+                        {% else %}
+                            <span class="text-muted">by {{ e.due|date:"d-m-Y" }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="nowrap no-print">
+                        {% if user.can_edit %}
+                        <a href="{% url 'registers:stay_update' tax e.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr><td colspan="12" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox" style="font-size:28px;opacity:.4;"></i>
+                    <p class="mb-0 mt-2" style="font-size:13px;">No stay applications{% if request.GET %} match these filters{% endif %}.
+                    Stay applications are entered from the appeal's own page.</p>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -64,6 +64,46 @@ Shown as the **last column** of both registers ("in N days" / "today"), sortable
 (`sort=hearing`, blanks last), filterable (`hearing=today|week|upcoming|past|none`),
 and the last column of both Excel exports.
 
+## Statutory Registers (`registers` app)
+Sales Tax Rules 2006 Rule 150ZZC (STR-24) and Income Tax Rules 2002 Rule 76K
+require four registers. The **Appeals Register is NOT built** - the office keeps
+its own, richer appeal registers (office decision, 04-11-2026). The other three
+are built **separately for each tax** (own table per tax, like the appeals), and
+each entry is a ForeignKey to its appeal so appeal particulars are never retyped.
+
+Done so far - **Stay Applications** (Rule 150ZZ / 76G):
+- `SalesTaxStayApplication` / `IncomeTaxStayApplication` (abstract `StayApplicationBase`):
+  receipt date + time, fixation, decision (pending / granted / not granted), days granted,
+  date of order (disposal), remarks, snapshotted `created_by_name` / `updated_by_name`.
+- Entered from the appeal page ("Stay Applications" panel); add/edit = can_add/can_edit,
+  delete = Admin; audit-logged.
+- Fixation left blank is worked out: before 01:00 PM -> next working day, after ->
+  the day after; received on an off day -> as if received next working morning.
+  Dispose by = fixation + 7 working days. Overdue rows are coloured.
+- Register: `/registers/<sales|income>/stay-applications/` - SRO columns and order,
+  filters, `?print=1` (A4 landscape, form heading) and `?export=xlsx`.
+- Disposal Report (STR-26 / Rule 76L(2), due 5th and 20th):
+  `/registers/<tax>/stay-applications/report/?month=YYYY-MM&part=full|first|second`.
+  Lists applications received by the period end and not disposed of before it began.
+- MPR: the office proforma is kept as it is (office decision). Only the "Disposal of
+  stay applications" row is now filled from these entries (`_mpr_stay_figures`).
+
+Still to build: Early Hearing Register, Compliance Register of Court Directions
+(column numbering skips (4) exactly as printed in both SROs - keep it), and the MPR
+"Superior Courts" row. Status choices were NOT extended to the SRO wording (Varied /
+Altered / Set aside; Enhanced / Other) because that would change the MPR columns.
+
+## Working Days and Holidays (`core.workdays`, `core.Holiday`)
+- Weekly off: Saturday, Sunday (`settings.OFFICE_WEEKEND`).
+- Holidays are generated once per year when first needed (`HolidayYear` marker), so
+  Admin's edits and deletions are never overwritten: national fixed dates plus the
+  Islamic ones from the Hijri calendar (`hijridate`, Umm al-Qura) shifted by
+  `settings.HIJRI_OFFSET_DAYS` (1) for Pakistan's moon sighting - Eid-ul-Fitr 3 days,
+  Eid-ul-Azha 3 days, Ashura 9-10 Muharram, Eid Milad-un-Nabi. Islamic ones start
+  **provisional**; Admin confirms or moves them on **Registers > Holidays** (`/holidays/`).
+- Overlapping national + Islamic dates keep both names.
+- Tests: `manage.py test registers`.
+
 ## Limitation Rules
 **THREE SEPARATE CLOCKS. Never combine them** - this was got wrong once and corrected
 by the office.

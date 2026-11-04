@@ -148,9 +148,9 @@ def mpr_figures(cfg, year, month):
     """Everything on the proforma that the register can work out on its own.
 
     Anything the register does not record - transfers, withdrawals, remand
-    backs, ADRC stays, stay applications and superior court directions - is
-    deliberately absent here and printed as an empty box for the office to
-    fill in by hand.
+    backs, ADRC stays and superior court directions - is deliberately absent
+    here and printed as an empty box for the office to fill in by hand. Stay
+    applications come from the Stay Application Register (registers app).
     """
     model = cfg["model"]
     amount = cfg["amount_field"]
@@ -193,7 +193,9 @@ def mpr_figures(cfg, year, month):
         })
 
     decided_fy = base.filter(**{f"{decided_on}__gte": fy, f"{decided_on}__lt": nxt})
+    stays = _mpr_stay_figures(model, amount, start, nxt)
     return {
+        "stays": stays,
         "period": start,
         "fy_start": fy,
         "opening_balance": opening_count,
@@ -219,6 +221,29 @@ def mpr_figures(cfg, year, month):
         "analysis_total_fy": decided_fy.count(),
         "analysis_revenue_fy": _millions(sum_of(decided_fy)),
     }
+
+
+def _mpr_stay_figures(model, amount, start, nxt):
+    """'Disposal of stay applications': counts and revenue (M) for the month."""
+    from registers.models import IncomeTaxStayApplication, SalesTaxStayApplication
+
+    stay_model = SalesTaxStayApplication if model is SalesTaxAppeal else IncomeTaxStayApplication
+    qs = stay_model.objects.all()
+    end = nxt - timedelta(days=1)
+    groups = [
+        ("opening", stay_model.open_on(qs, start)),
+        ("new", qs.filter(date_of_receipt__gte=start, date_of_receipt__lt=nxt)),
+        ("decided", qs.filter(date_of_order__gte=start, date_of_order__lt=nxt)),
+        ("pending_10", stay_model.pending_over(qs, end)),
+        ("closing", stay_model.open_on(qs, nxt)),
+    ]
+    out = {}
+    for key, group in groups:
+        out[key] = {
+            "count": group.count(),
+            "revenue": _millions(group.aggregate(t=Sum(f"appeal__{amount}"))["t"] or 0),
+        }
+    return out
 
 
 # ---------------------------------------------------------------------------

@@ -60,6 +60,25 @@
                 <a class="nav-link {% if 'income_tax' in request.resolver_match.url_name %}active{% endif %}"
                    href="{% url 'appeals:income_tax_list' %}"><i class="bi bi-cash-coin me-1"></i> Income Tax Appeals</a>
             </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {% if request.resolver_match.app_name == 'registers' or 'holiday' in request.resolver_match.url_name %}active{% endif %}"
+                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-journals me-1"></i> Registers
+                </a>
+                <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">Sales Tax (STR-24 / STR-26)</h6></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:stay_register' 'sales' %}">Stay Application Register</a></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:stay_report' 'sales' %}">Stay Applications Disposal Report</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Income Tax (Rule 76K / 76L)</h6></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:stay_register' 'income' %}">Stay Application Register</a></li>
+                    <li><a class="dropdown-item" href="{% url 'registers:stay_report' 'income' %}">Stay Applications Disposal Report</a></li>
+                    {% if user.is_admin %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'core:holiday_list' %}"><i class="bi bi-calendar-event me-1"></i> Holidays (working days)</a></li>
+                    {% endif %}
+                </ul>
+            </li>
             {% if user.is_admin %}
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle {% if 'mpr' in request.resolver_match.url_name %}active{% endif %}"

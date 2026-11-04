@@ -1,0 +1,78 @@
+{% extends "base/base.html" %}
+{% load register_cells %}
+
+{% block title %}{{ cfg.label }} Stay Disposal Report{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="page-title">{{ cfg.label }} &mdash; Stay Applications Disposal Report</h1>
+        <p class="page-subtitle">{% if form_no %}{{ form_no }} {% endif %}{{ rule }}, {{ cfg.law }} &middot; submitted by the 5th and the 20th of every month</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="{% url 'registers:stay_register' tax %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-journal-text me-1"></i> Stay Register
+        </a>
+        <a href="?month={{ month_value }}&amp;part={{ part }}&amp;export=xlsx" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+        </a>
+        <a href="?month={{ month_value }}&amp;part={{ part }}&amp;print=1" class="btn btn-fbr btn-sm" target="_blank">
+            <i class="bi bi-printer me-1"></i> Print Report
+        </a>
+    </div>
+</div>
+
+<div class="panel mb-3 no-print">
+    <div class="panel-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-6 col-md-3">
+                <label class="form-label">Month</label>
+                <input type="month" name="month" value="{{ month_value }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Period</label>
+                <select name="part" class="form-select form-select-sm">
+                    {% for key, label in parts.items %}
+                    <option value="{{ key }}" {% if part == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <button class="btn btn-fbr btn-sm w-100"><i class="bi bi-search me-1"></i> Show</button>
+            </div>
+            <div class="col-12 col-md-4 text-muted" style="font-size:12px;">
+                Lists every application received by the end of the period and not disposed of before it began:
+                those received, those decided, and those still pending.
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-head"><span>{{ title_line2 }}{% if period_line %} &middot; {{ period_line }}{% endif %}</span></div>
+    <div class="table-responsive">
+        <table class="table table-register table-hover mb-0">
+            <thead>
+                <tr>{% for label, num in headings %}<th>{{ label }}<br><small>{{ num }}</small></th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="{% if row.entry.overdue and not row.entry.date_of_order %}row-overdue-180{% endif %}">
+                    {% for value in row.cells %}
+                    {% if forloop.counter0 == 1 %}
+                    <td class="nowrap fw-semibold"><a href="{% url cfg.appeal_detail_url row.entry.appeal_id %}#stay-applications" style="color:var(--fbr-green-dark);">{{ value }}</a></td>
+                    {% elif forloop.counter0 == 6 and not value %}
+                    <td class="nowrap">{% if row.entry.overdue %}<span style="color:var(--danger);font-weight:600;">pending - overdue</span>{% else %}<span class="text-muted">pending</span>{% endif %}</td>
+                    {% else %}
+                    <td class="nowrap">{{ value|cell }}</td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-5">No stay applications in this period.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

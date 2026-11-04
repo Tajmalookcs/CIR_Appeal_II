@@ -52,3 +52,48 @@ class AuditLog(models.Model):
         if not self.changes:
             return ""
         return ", ".join(f"{field}" for field in self.changes.keys())
+
+
+class Holiday(models.Model):
+    """A day the office is closed, besides the weekly off days.
+
+    Islamic holidays are worked out from the Hijri calendar when a year is
+    first needed (see core.workdays) and marked provisional, because Pakistan
+    fixes them by moon sighting. Admin moves the date if Ruet-e-Hilal differs
+    and then marks it confirmed. National holidays fall on fixed dates.
+    """
+
+    class Kind(models.TextChoices):
+        ISLAMIC = "islamic", "Islamic (Hijri calendar)"
+        NATIONAL = "national", "National"
+        OTHER = "other", "Other / special"
+
+    date = models.DateField("Date", unique=True)
+    name = models.CharField("Holiday", max_length=100)
+    kind = models.CharField("Type", max_length=20, choices=Kind.choices, default=Kind.OTHER)
+    provisional = models.BooleanField(
+        "Provisional", default=False,
+        help_text="Worked out from the Hijri calendar; not yet confirmed by moon sighting.",
+    )
+    notes = models.CharField("Notes", max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["date"]
+        verbose_name = "Holiday"
+        verbose_name_plural = "Holidays"
+
+    def __str__(self):
+        return f"{self.date:%d-%m-%Y} {self.name}"
+
+
+class HolidayYear(models.Model):
+    """Marks a Gregorian year whose holidays have been generated once.
+
+    Kept so that a holiday Admin deletes on purpose is not generated again.
+    """
+
+    year = models.PositiveSmallIntegerField(unique=True)
+    generated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.year)
