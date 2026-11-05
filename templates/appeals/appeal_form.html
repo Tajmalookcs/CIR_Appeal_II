@@ -140,6 +140,7 @@
                         <div class="col-md-6">{% include "appeals/_field.html" with field=form.appellate_order_date %}</div>
                         {% endif %}
                         <div class="col-md-6">{% include "appeals/_field.html" with field=form.decision_status %}</div>
+                        <div class="col-md-6">{% include "appeals/_field.html" with field=form.mpr_month %}</div>
                     </div>
 
                     <p class="fieldset-title">Despatch &amp; Service</p>
@@ -196,6 +197,24 @@
             .catch(() => {
                 unitSel.innerHTML = '<option value="">Could not load units</option>';
             });
+    });
+})();
+
+// MPR Month follows the decision date until the clerk sets it by hand.
+(function () {
+    const decided = document.getElementById('id_oia_date') || document.getElementById('id_appellate_order_date');
+    const mpr = document.getElementById('id_mpr_month');
+    if (!decided || !mpr) return;
+    let auto = mpr.value === '' || mpr.value === decided.value.slice(0, 7);
+    mpr.addEventListener('change', function () {
+        auto = mpr.value === '' || mpr.value === decided.value.slice(0, 7);
+    });
+    decided.addEventListener('change', function () {
+        if (!decided.value) { mpr.value = ''; auto = true; return; }
+        if (auto || !mpr.value || mpr.value < decided.value.slice(0, 7)) {
+            mpr.value = decided.value.slice(0, 7);
+            auto = true;
+        }
     });
 })();
 </script>

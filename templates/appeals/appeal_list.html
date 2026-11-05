@@ -55,7 +55,7 @@
     <div class="panel-head"><span><i class="bi bi-funnel me-1"></i> Search &amp; Filter</span></div>
     <div class="panel-body">
         <form method="get" class="row g-2 align-items-end">
-            <div class="col-12 col-md-4 col-lg-3">
+            <div class="col-12 col-md-4 col-lg-2">
                 <label class="form-label">Search</label>
                 <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm"
                        placeholder="Appeal No., NTN, appellant...">
@@ -95,6 +95,11 @@
                     <option value="pending" {% if filters.pendency == "pending" %}selected{% endif %}>Pending</option>
                     <option value="decided" {% if filters.pendency == "decided" %}selected{% endif %}>Decided</option>
                 </select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label">MPR Month</label>
+                <input type="month" name="mpr" value="{{ filters.mpr }}" class="form-control form-control-sm"
+                       title="Appeals counted as decided in this month's MPR">
             </div>
             <div class="col-6 col-md-3 col-lg-2">
                 <label class="form-label">Decision Limit</label>
@@ -177,6 +182,7 @@
                     <th>{% include "appeals/_sort_th.html" with col=sort_cols.decision label="Decision" sub="" %}</th>
                     <th>{% include "appeals/_sort_th.html" with col=sort_cols.service label="Service" sub="" %}</th>
                     <th>{% include "appeals/_sort_th.html" with col=sort_cols.hearing label="Hearing Date" sub="" %}</th>
+                    <th>{% include "appeals/_sort_th.html" with col=sort_cols.mpr label="MPR Month" sub="" %}</th>
                     <th class="no-print"></th>
                 </tr>
             </thead>
@@ -264,6 +270,7 @@
                             <span class="text-muted">&mdash;</span>
                         {% endif %}
                     </td>
+                    <td class="nowrap">{% if a.mpr_month %}<span class="pill pill-info">{{ a.mpr_month|date:"M-Y" }}</span>{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                     <td class="nowrap no-print">
                         <a href="{% url cfg.detail_url a.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1"
                            title="View"><i class="bi bi-eye"></i></a>
@@ -275,7 +282,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="14" class="text-center text-muted py-5">
+                    <td colspan="15" class="text-center text-muted py-5">
                         <i class="bi bi-inbox" style="font-size:28px;opacity:.4;"></i>
                         <p class="mb-0 mt-2" style="font-size:13px;">No appeals match the current filters.</p>
                     </td>

@@ -158,15 +158,20 @@ def mpr_figures(cfg, year, month):
     start, nxt = month_bounds(year, month)
     fy = fy_start(year, month)
 
-    base = model.objects.all()
-    undecided_at = lambda d: Q(**{f"{decided_on}__isnull": True}) | Q(**{f"{decided_on}__gte": d})
+    # A decision counts in the MPR of its MPR Month (the 1st of that month),
+    # which may be later than the decision date when the order was processed
+    # after the month closed. Until then the appeal is still pending. The
+    # decision date is only a fallback should MPR Month ever be missing.
+    from django.db.models.functions import Coalesce
+    base = model.objects.annotate(mpr_key=Coalesce("mpr_month", decided_on))
+    undecided_at = lambda d: Q(mpr_key__isnull=True) | Q(mpr_key__gte=d)
 
     # Carried in from before the month: filed earlier and still open on day one.
     opening = base.filter(Q(date_of_institution__lt=start) & undecided_at(start))
     fresh = base.filter(date_of_institution__gte=start, date_of_institution__lt=nxt)
 
-    decided_month = base.filter(**{f"{decided_on}__gte": start, f"{decided_on}__lt": nxt})
-    decided_fy_before = base.filter(**{f"{decided_on}__gte": fy, f"{decided_on}__lt": start})
+    decided_month = base.filter(mpr_key__gte=start, mpr_key__lt=nxt)
+    decided_fy_before = base.filter(mpr_key__gte=fy, mpr_key__lt=start)
 
     opening_count = opening.count()
     fresh_count = fresh.count()
@@ -184,15 +189,14 @@ def mpr_figures(cfg, year, month):
         if value == model.Decision.PENDING:
             continue
         m = decided_month.filter(decision_status=value)
-        f = base.filter(decision_status=value,
-                        **{f"{decided_on}__gte": fy, f"{decided_on}__lt": nxt})
+        f = base.filter(decision_status=value, mpr_key__gte=fy, mpr_key__lt=nxt)
         analysis.append({
             "label": label,
             "month_cases": m.count(), "month_revenue": _millions(sum_of(m)),
             "fy_cases": f.count(), "fy_revenue": _millions(sum_of(f)),
         })
 
-    decided_fy = base.filter(**{f"{decided_on}__gte": fy, f"{decided_on}__lt": nxt})
+    decided_fy = base.filter(mpr_key__gte=fy, mpr_key__lt=nxt)
     stays = _mpr_stay_figures(model, amount, start, nxt)
     return {
         "stays": stays,
@@ -287,6 +291,7 @@ SORTABLE = {
     "decision": ["decision_status"],
     "service": ["service_status"],
     "hearing": ["hearing_date"],
+    "mpr": ["mpr_month"],
 }
 
 DEFAULT_SORT = "appeal_no"
@@ -422,6 +427,14 @@ def apply_filters(request, cfg):
             second_expiry_180__lte=today + timedelta(days=30),
         )
 
+    mpr = request.GET.get("mpr", "").strip()
+    if mpr:
+        try:
+            y, m = (int(x) for x in mpr.split("-")[:2])
+            qs = qs.filter(mpr_month=date(y, m, 1))
+        except (ValueError, TypeError):
+            pass
+
     hearing = request.GET.get("hearing", "").strip()
     if hearing == "today":
         qs = qs.filter(hearing_date=today)
@@ -501,6 +514,7 @@ def register_context(request, key):
             "expiry": request.GET.get("expiry", ""),
             "filing": request.GET.get("filing", ""),
             "hearing": request.GET.get("hearing", ""),
+            "mpr": request.GET.get("mpr", ""),
             "from": request.GET.get("from", ""),
             "to": request.GET.get("to", ""),
         },
@@ -1049,6 +1063,7 @@ SALES_COLUMNS = [
     ("Courier Date", lambda a: a.courier_date),
     ("Service Status", lambda a: a.get_service_status_display()),
     ("Hearing Date", lambda a: a.hearing_date),
+    ("MPR Month", lambda a: a.mpr_month.strftime("%b-%Y") if a.mpr_month else ""),
 ]
 
 INCOME_COLUMNS = [
@@ -1086,6 +1101,7 @@ INCOME_COLUMNS = [
     ("Courier Date", lambda a: a.courier_date),
     ("Service Status", lambda a: a.get_service_status_display()),
     ("Hearing Date", lambda a: a.hearing_date),
+    ("MPR Month", lambda a: a.mpr_month.strftime("%b-%Y") if a.mpr_month else ""),
 ]
 
 

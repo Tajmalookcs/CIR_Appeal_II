@@ -64,6 +64,19 @@ Shown as the **last column** of both registers ("in N days" / "today"), sortable
 (`sort=hearing`, blanks last), filterable (`hearing=today|week|upcoming|past|none`),
 and the last column of both Excel exports.
 
+## MPR Month
+`BaseAppeal.mpr_month` (migration `0009_mpr_month`, stored as the 1st of the month):
+the month whose MPR counts the appeal as **decided**. `save()` fills it from the
+decision date and clears it while pending; the clerk may move it to a later month
+when the order is processed after the month closed (order of 30 Oct -> November MPR).
+Form: month picker in the Decision section, auto-filled by script; may not be before
+the decision month or set without a decision date. The migration filled it for all
+already-decided appeals from their decision dates, so earlier MPRs are unchanged.
+Register: "MPR Month" filter (`?mpr=YYYY-MM`) after Pendency, column after Hearing
+Date (sortable `sort=mpr`), last Excel column. **`mpr_figures` counts disposals,
+pendency, ages and the analysis by `Coalesce(mpr_month, decision date)`** - an appeal
+moved to a later MPR Month is pending in the earlier month's MPR.
+
 ## Statutory Registers (`registers` app)
 Sales Tax Rules 2006 Rule 150ZZC (STR-24) and Income Tax Rules 2002 Rule 76K
 require four registers. The **Appeals Register is NOT built** - the office keeps

@@ -39,6 +39,13 @@ class AppealFormBase(forms.ModelForm):
         elif self.instance.pk and self.instance.zone_id:
             zone_id = self.instance.zone_id
 
+        # MPR Month is picked as a month (YYYY-MM) and stored as its 1st day.
+        self.fields["mpr_month"].input_formats = ["%Y-%m", "%Y-%m-%d"]
+        self.fields["mpr_month"].help_text = (
+            "Month whose MPR counts this decision. Filled from the decision date; "
+            "change it if the order is processed in a later month."
+        )
+
         if zone_id:
             self.fields["unit"].queryset = Unit.objects.filter(
                 zone_id=zone_id, is_active=True
@@ -52,6 +59,16 @@ class AppealFormBase(forms.ModelForm):
         zone, unit = cleaned.get("zone"), cleaned.get("unit")
         if unit and zone and unit.zone_id != zone.pk:
             self.add_error("unit", "This unit does not belong to the selected zone.")
+
+        # MPR Month only for a decided appeal, and never before the decision.
+        decided = cleaned.get(self._meta.model.DECISION_DATE_FIELD)
+        mpr = cleaned.get("mpr_month")
+        if mpr:
+            cleaned["mpr_month"] = mpr = mpr.replace(day=1)
+            if not decided:
+                self.add_error("mpr_month", "Enter the decision date first; MPR Month is for decided appeals.")
+            elif mpr < decided.replace(day=1):
+                self.add_error("mpr_month", f"Cannot be before the month of the decision ({decided:%b-%Y}).")
 
         # The Appeal No. must be unique within its year of institution.
         serial = cleaned.get("serial_no")
@@ -88,7 +105,7 @@ class SalesTaxAppealForm(AppealFormBase):
             "ar_name", "ar_type", "ar_registration_no", "ar_contact_no",
             "ar_address", "ar_city",
             "issue_involved", "section",
-            "oia_no", "oia_date", "decision_status",
+            "oia_no", "oia_date", "decision_status", "mpr_month",
             "courier_no", "courier_date", "service_status",
             "hearing_date",
         ]
@@ -123,6 +140,8 @@ class SalesTaxAppealForm(AppealFormBase):
             "oia_no": forms.TextInput(attrs=TEXT),
             "oia_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
             "decision_status": forms.Select(attrs=SELECT),
+            "mpr_month": forms.DateInput(attrs={"type": "month", "class": "form-control"},
+                                         format="%Y-%m"),
             "courier_no": forms.TextInput(attrs=TEXT),
             "courier_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
             "service_status": forms.Select(attrs=SELECT),
@@ -142,7 +161,7 @@ class IncomeTaxAppealForm(AppealFormBase):
             "issues_involved",
             "ar_name", "ar_type", "ar_registration_no", "ar_contact_no",
             "ar_address", "ar_city",
-            "appellate_order_date", "decision_status",
+            "appellate_order_date", "decision_status", "mpr_month",
             "courier_no", "courier_date", "service_status",
             "hearing_date",
         ]
@@ -176,6 +195,8 @@ class IncomeTaxAppealForm(AppealFormBase):
             "ar_city": forms.TextInput(attrs=TEXT),
             "appellate_order_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
             "decision_status": forms.Select(attrs=SELECT),
+            "mpr_month": forms.DateInput(attrs={"type": "month", "class": "form-control"},
+                                         format="%Y-%m"),
             "courier_no": forms.TextInput(attrs=TEXT),
             "courier_date": forms.DateInput(attrs=DATE_ATTRS, format="%Y-%m-%d"),
             "service_status": forms.Select(attrs=SELECT),

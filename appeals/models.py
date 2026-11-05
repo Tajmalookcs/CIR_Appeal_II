@@ -122,6 +122,13 @@ class BaseAppeal(models.Model):
     # the earlier dates).
     hearing_date = models.DateField("Hearing Date", null=True, blank=True, db_index=True)
 
+    # The month whose MPR counts this appeal as decided - stored as the 1st of
+    # that month. Filled from the decision date on save and may be moved to a
+    # later month when the order is processed after the month closed (an order
+    # of 30 October reported in the November MPR). Cleared while the appeal is
+    # pending. The MPR counts decisions by this month, not the decision date.
+    mpr_month = models.DateField("MPR Month", null=True, blank=True, db_index=True)
+
     # The foreign keys let us follow the account; the *_by_name snapshots record
     # who actually did the work. An account that is renamed or reassigned to a
     # new person must never reattribute an existing entry.
@@ -186,6 +193,11 @@ class BaseAppeal(models.Model):
         else:
             self.first_expiry_120 = None
             self.second_expiry_180 = None
+        decided = self.decision_date
+        if decided:
+            self.mpr_month = (self.mpr_month or decided).replace(day=1)
+        else:
+            self.mpr_month = None
         super().save(*args, **kwargs)
 
     @property
@@ -396,6 +408,8 @@ class SalesTaxAppeal(BaseAppeal):
     def decision_date(self):
         return self.oia_date
 
+    DECISION_DATE_FIELD = "oia_date"
+
     def get_absolute_url(self):
         return reverse("appeals:sales_tax_detail", args=[self.pk])
 
@@ -463,6 +477,8 @@ class IncomeTaxAppeal(BaseAppeal):
     @property
     def decision_date(self):
         return self.appellate_order_date
+
+    DECISION_DATE_FIELD = "appellate_order_date"
 
     def get_absolute_url(self):
         return reverse("appeals:income_tax_detail", args=[self.pk])
